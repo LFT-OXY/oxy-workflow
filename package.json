@@ -4,6 +4,14 @@
   "description": "Curated installer for AI toolchain components (MCP servers, skills, agents, spec tools) into Claude Code and Codex",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LFT-OXY/oxy-workflow.git"
+  },
+  "homepage": "https://github.com/LFT-OXY/oxy-workflow#readme",
+  "bugs": {
+    "url": "https://github.com/LFT-OXY/oxy-workflow/issues"
+  },
   "bin": {
     "oxy": "bin/oxy.mjs"
   },
