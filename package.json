@@ -1,0 +1,42 @@
+{
+  "name": "oxy-workflow",
+  "version": "0.1.0",
+  "description": "Curated installer for AI toolchain components (MCP servers, skills, agents, spec tools) into Claude Code and Codex",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "oxy": "bin/oxy.mjs"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "claude-code",
+    "codex",
+    "mcp",
+    "skills",
+    "installer",
+    "ai-toolchain"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.5.2",
+    "cac": "^7.0.0",
+    "picocolors": "^1.1.1",
+    "smol-toml": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}
