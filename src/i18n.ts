@@ -5,10 +5,10 @@ export type Lang = 'zh' | 'en'
 
 /** 全部 UI 文案；en 为键的唯一来源，zh 由类型约束保证键集合一致 */
 const en = {
-  'cli.menu': 'Interactive main menu (install / doctor / uninstall)',
+  'cli.menu': 'Interactive main menu (install / manage / doctor)',
   'cli.install': 'Install wizard (hosts → components → env)',
   'cli.doctor': 'Probe hosts & components, finish missing env setup',
-  'cli.uninstall': 'Remove installed components (reversible mechanisms only)',
+  'cli.manage': 'Manage catalog: per-item detail / install / uninstall',
 
   'menu.title': 'oxy main menu',
   'menu.groupComponents': 'Components',
@@ -17,8 +17,8 @@ const en = {
   'menu.installDesc': 'wizard: hosts → picks → env',
   'menu.doctor': 'Doctor',
   'menu.doctorDesc': 'probe status / finish env setup',
-  'menu.uninstall': 'Uninstall components',
-  'menu.uninstallDesc': 'reversible mechanisms only',
+  'menu.manage': 'Manage components',
+  'menu.manageDesc': 'per-item detail / install / uninstall',
   'menu.update': 'Check updates',
   'menu.updateDesc': 'compare with latest on npm',
   'menu.lang': 'Display language',
@@ -31,8 +31,8 @@ const en = {
 
   'help.body': `oxy              open this menu
 oxy install      install wizard (hosts → components → env)
+oxy manage       per-item detail / install / uninstall
 oxy doctor       probe everything, finish env setup
-oxy uninstall    remove installed components
 
 Docs & issues: {url}`,
 
@@ -64,7 +64,6 @@ Docs & issues: {url}`,
   'wizard.confirmProceed': 'What next?',
   'wizard.confirmGo': 'Install now',
   'wizard.confirmCancel': 'Cancel, back to menu',
-  'wizard.envOptional': '(optional, Enter to skip)',
   'wizard.summary': '{n} installed',
   'wizard.summaryFailed': ', {n} failed',
   'wizard.doctorHint': 'Run `npx oxy-workflow doctor` anytime to check status or finish env setup.',
@@ -75,17 +74,21 @@ Docs & issues: {url}`,
   'doctor.envConfigured': '{id} env configured',
   'doctor.envFailed': '{id} failed: {detail}',
 
-  'uninstall.nothingFound': 'Nothing installed by catalog entries was found.',
-  'uninstall.pick': 'Select components to remove',
-  'uninstall.onHost': 'on {host}',
-  'uninstall.globalCli': 'global CLI, uninstall manually',
-  'uninstall.confirm': 'Remove {name} on {host}?',
-  'uninstall.removed': 'removed {key}',
-  'uninstall.failedItem': 'failed {key}: {detail}',
-  'uninstall.doneHint': 'Done. `npx oxy-workflow doctor` to verify.',
+  'manage.pick': 'Select a component (Enter = detail)',
+  'manage.backToMenu': '← Back to menu',
+  'manage.backToList': '← Back to list',
+  'manage.homepage': 'Homepage',
+  'manage.installVia': 'Install via',
+  'manage.status': 'Status',
+  'manage.pickAction': 'Action?',
+  'manage.actionInstall': 'Install to {host}',
+  'manage.actionInstallGlobal': 'Install (global CLI)',
+  'manage.actionUninstall': 'Uninstall from {host}',
+  'manage.confirmRemove': 'Remove {name} on {host}?',
+  'manage.globalCli': 'global CLI, uninstall manually',
 
+  'common.envOptional': '(optional, Enter to skip)',
   'common.notDetected': 'not detected',
-  'common.nothingSelected': 'Nothing selected, bye.',
   'common.ok': 'ok',
   'common.failed': 'failed',
 }
@@ -93,10 +96,10 @@ Docs & issues: {url}`,
 export type MsgKey = keyof typeof en
 
 const zh: Record<MsgKey, string> = {
-  'cli.menu': '交互主菜单（安装 / 体检 / 卸载）',
+  'cli.menu': '交互主菜单（安装 / 管理 / 体检）',
   'cli.install': '安装向导（宿主 → 组件 → env）',
   'cli.doctor': '探测宿主与组件状态，补配缺失 env',
-  'cli.uninstall': '卸载已安装组件（仅可逆机制）',
+  'cli.manage': '管理目录：单件详情 / 安装 / 卸载',
 
   'menu.title': 'oxy 主菜单',
   'menu.groupComponents': '组件',
@@ -105,8 +108,8 @@ const zh: Record<MsgKey, string> = {
   'menu.installDesc': '向导：宿主 → 多选 → env',
   'menu.doctor': '体检 doctor',
   'menu.doctorDesc': '探测状态 / 补配 env',
-  'menu.uninstall': '卸载组件',
-  'menu.uninstallDesc': '仅可逆机制',
+  'menu.manage': '管理组件',
+  'menu.manageDesc': '单件详情 / 安装 / 卸载',
   'menu.update': '检查更新',
   'menu.updateDesc': '对比 npm 最新版本',
   'menu.lang': '更改显示语言 / Language',
@@ -119,8 +122,8 @@ const zh: Record<MsgKey, string> = {
 
   'help.body': `oxy              打开主菜单
 oxy install      安装向导（宿主 → 组件 → env）
+oxy manage       单件详情 / 安装 / 卸载
 oxy doctor       全量探测，补配 env
-oxy uninstall    卸载已安装组件
 
 文档与反馈：{url}`,
 
@@ -152,7 +155,6 @@ oxy uninstall    卸载已安装组件
   'wizard.confirmProceed': '如何继续？',
   'wizard.confirmGo': '确认安装',
   'wizard.confirmCancel': '取消，回主菜单',
-  'wizard.envOptional': '（可选，回车跳过）',
   'wizard.summary': '{n} 个安装成功',
   'wizard.summaryFailed': '，{n} 个失败',
   'wizard.doctorHint': '随时运行 `npx oxy-workflow doctor` 查看状态或补配 env。',
@@ -163,17 +165,21 @@ oxy uninstall    卸载已安装组件
   'doctor.envConfigured': '{id} env 已配置',
   'doctor.envFailed': '{id} 失败：{detail}',
 
-  'uninstall.nothingFound': '未探测到目录内的任何已安装组件。',
-  'uninstall.pick': '选择要卸载的组件',
-  'uninstall.onHost': '于 {host}',
-  'uninstall.globalCli': '全局 CLI，请手动卸载',
-  'uninstall.confirm': '确认卸载 {name}（{host}）？',
-  'uninstall.removed': '已卸载 {key}',
-  'uninstall.failedItem': '卸载失败 {key}：{detail}',
-  'uninstall.doneHint': '完成。可运行 `npx oxy-workflow doctor` 复核。',
+  'manage.pick': '选择要管理的组件（回车进入详情）',
+  'manage.backToMenu': '← 返回主菜单',
+  'manage.backToList': '← 返回列表',
+  'manage.homepage': '主页',
+  'manage.installVia': '安装方式',
+  'manage.status': '状态',
+  'manage.pickAction': '选择操作',
+  'manage.actionInstall': '安装到 {host}',
+  'manage.actionInstallGlobal': '安装（全局 CLI）',
+  'manage.actionUninstall': '从 {host} 卸载',
+  'manage.confirmRemove': '确认卸载 {name}（{host}）？',
+  'manage.globalCli': '全局 CLI，请手动卸载',
 
+  'common.envOptional': '（可选，回车跳过）',
   'common.notDetected': '未检测到',
-  'common.nothingSelected': '未选择任何项，再见。',
   'common.ok': '成功',
   'common.failed': '失败',
 }

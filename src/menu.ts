@@ -6,7 +6,7 @@ import pc from 'picocolors'
 import { runDoctor } from './doctor.js'
 import { getLang, savedLang, saveLang, setLang, t } from './i18n.js'
 import { realIo } from './io.js'
-import { runUninstall } from './uninstall.js'
+import { runManage } from './manage.js'
 import { fetchLatestVersion, isNewer } from './update.js'
 import { runWizard } from './wizard.js'
 
@@ -21,7 +21,7 @@ const LOGO = `
  ╚██████╔╝██╔╝ ██╗   ██║
   ╚═════╝ ╚═╝  ╚═╝   ╚═╝`
 
-type MenuAction = 'install' | 'doctor' | 'uninstall' | 'update' | 'lang' | 'help' | 'quit'
+type MenuAction = 'install' | 'manage' | 'doctor' | 'update' | 'lang' | 'help' | 'quit'
 
 /** 主菜单循环：横幅 → 选择 → 执行 → 回菜单，Q 退出（CCG/ZCF 式壳） */
 export async function runMenu(version: string): Promise<void> {
@@ -48,11 +48,11 @@ export async function runMenu(version: string): Promise<void> {
       case 'install':
         await runWizard()
         break
+      case 'manage':
+        await runManage()
+        break
       case 'doctor':
         await runDoctor()
-        break
-      case 'uninstall':
-        await runUninstall()
         break
       case 'update':
         await checkUpdate(version)
@@ -78,8 +78,8 @@ function menuChoices(): (Separator | { value: MenuAction, name: string })[] {
   return [
     rule(t('menu.groupComponents')),
     row('install', '1.', t('menu.install'), t('menu.installDesc')),
-    row('doctor', '2.', t('menu.doctor'), t('menu.doctorDesc')),
-    row('uninstall', '3.', t('menu.uninstall'), t('menu.uninstallDesc')),
+    row('manage', '2.', t('menu.manage'), t('menu.manageDesc')),
+    row('doctor', '3.', t('menu.doctor'), t('menu.doctorDesc')),
     rule(t('menu.groupOxy')),
     row('update', 'U.', t('menu.update'), t('menu.updateDesc')),
     row('lang', '0.', t('menu.lang'), t('menu.langDesc')),

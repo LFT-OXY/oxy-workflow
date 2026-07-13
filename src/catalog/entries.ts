@@ -33,6 +33,19 @@ export const CATALOG: CatalogEntry[] = [
     },
   },
   {
+    id: 'oxy-summary',
+    type: 'skill',
+    name: 'Oxy Summary',
+    summary: 'Teaching-style deep-dive notes from links, docs, and code',
+    homepage: 'https://github.com/LFT-OXY/skills',
+    recommended: true,
+    install: {
+      method: 'fetch-files',
+      repo: 'LFT-OXY/skills',
+      source: 'skills/oxy-summary',
+    },
+  },
+  {
     id: 'code-refactorer',
     type: 'agent',
     name: 'Code Refactorer',

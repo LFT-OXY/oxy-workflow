@@ -27,11 +27,13 @@ npx oxy-workflow
   - Spec tools → official install command (e.g. `npm i -g ...`)
 - **Guided env setup**: entries that need API keys prompt during
   install (skippable).
+- **`oxy manage`**: manage the catalog per item — a live per-host
+  status list, full detail for any entry, then install to or
+  uninstall from individual hosts (uninstall for reversible
+  mechanisms only, with confirmation).
 - **`oxy doctor`**: stateless live probe of every catalog entry on
   every host — installed / not installed / installed-but-missing-env
   (and lets you finish env setup on the spot).
-- **`oxy uninstall`**: removes what the probe actually finds, for
-  reversible mechanisms only, with per-item confirmation.
 
 No state files. The tool never records what it did — it just looks
 at your machine, every time.
@@ -78,11 +80,12 @@ npx oxy-workflow
   - Spec 工具 → 官方安装命令（如 `npm i -g ...`）
 - **引导式环境配置**：需要 API key 的条目在安装时提示输入
   （可跳过）。
+- **`oxy manage`**：单件管理——带实时逐宿主状态的全量目录，
+  进入任一条目查看完整详情，再对单个宿主执行安装或卸载（卸载
+  仅限可逆机制，需确认）。
 - **`oxy doctor`**：对目录中每个条目在每个宿主上做无状态实时
   探测 —— 已安装 / 未安装 / 已安装但缺环境变量（并可当场补齐
   环境配置）。
-- **`oxy uninstall`**：只卸载探测实际发现的内容，仅限可逆机制，
-  逐项确认。
 
 无状态文件。本工具从不记录自己做过什么 —— 每次都直接查看你的
 机器。

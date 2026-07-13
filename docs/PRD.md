@@ -19,7 +19,7 @@
 3. 需 env 的条目引导输入（可跳过；跳过后 doctor 可补配）
 4. 逐条执行官方安装，单条失败跳过不中断，结尾汇总
 5. `oxy doctor` 全量探测报告（含"已装但缺 env"状态）
-6. `oxy uninstall` 仅对可逆机制卸载，逐项确认
+6. `oxy manage` 单件详情 / 安装 / 卸载（卸载仅可逆机制，逐项确认）
 
 ## 支持矩阵（v1）
 
@@ -60,6 +60,7 @@
 |----|------|---------|------|
 | context7 | mcp | upstash/context7 → `@upstash/context7-mcp` | `CONTEXT7_API_KEY` 可选 |
 | skill-creator | skill | anthropics/skills `skills/skill-creator` | 双宿主 |
+| oxy-summary | skill | LFT-OXY/skills `skills/oxy-summary` | 双宿主，自有公开集合仓库 |
 | code-refactorer | agent | iannuttall/claude-agents `agents/code-refactorer.md` | README 官方 cp 安装法 |
 | openspec | spec | `@fission-ai/openspec`（bin `openspec`） | npm -g |
 
@@ -68,7 +69,8 @@
 - `oxy`：向导（宿主选择 → 组件多选 → env 引导 → 执行 → 汇总）
 - `oxy doctor`：全量探测报告 + 缺失必需 env 现场补配（合并既有
   env 重注册，不丢已配置键）
-- `oxy uninstall`：交互式卸载（仅可逆机制，逐项确认）
+- `oxy manage`：管理目录——单件详情 / 安装 / 卸载（卸载仅可逆
+  机制，逐项确认）
 - 退出码：向导完成（含部分失败已汇总）为 0；参数/环境错误为 1；
   用户 Ctrl-C 中断为 130（Unix 惯例）
 

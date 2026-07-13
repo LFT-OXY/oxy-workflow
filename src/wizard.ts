@@ -1,7 +1,7 @@
 import type { CatalogEntry, EntryType, HostId } from './catalog/types.js'
 import type { HostAdapter } from './hosts/types.js'
 import { homedir } from 'node:os'
-import { checkbox, password, select, Separator } from '@inquirer/prompts'
+import { checkbox, select, Separator } from '@inquirer/prompts'
 import pc from 'picocolors'
 import { CATALOG } from './catalog/entries.js'
 import { HOSTS, hostById } from './hosts/index.js'
@@ -9,7 +9,7 @@ import { installEntry } from './install.js'
 import { realIo } from './io.js'
 import { t } from './i18n.js'
 import { hostPresent, statusOf } from './probe.js'
-import { typeTitle } from './ui.js'
+import { promptEnv, typeTitle } from './ui.js'
 import { buildChoices, installHosts, prunePicks, screenTypes } from './wizard-logic.js'
 
 /** 返回伪选项的哨兵值；目录条目 id 不使用双下划线前缀，不会冲突 */
@@ -120,15 +120,8 @@ export async function runWizard(): Promise<void> {
 
   // env 引导（可跳过；跳过的必需项由 doctor 补配）
   const envValues: Record<string, Record<string, string>> = {}
-  for (const { entry } of todo) {
-    for (const v of entry.env ?? []) {
-      const suffix = v.required ? '' : ` ${t('wizard.envOptional')}`
-      const hint = v.hint ? pc.dim(` ${v.hint}`) : ''
-      const value = await password({ message: `${entry.name} · ${v.key}${suffix}${hint}`, mask: '*' })
-      if (value)
-        (envValues[entry.id] ??= {})[v.key] = value
-    }
-  }
+  for (const { entry } of todo)
+    envValues[entry.id] = await promptEnv(entry)
 
   // 逐条执行，单条失败跳过不中断
   const failures: string[] = []

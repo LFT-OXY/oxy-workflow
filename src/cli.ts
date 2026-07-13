@@ -5,8 +5,8 @@ import pc from 'picocolors'
 import { runDoctor } from './doctor.js'
 import { detectLang, savedLang, setLang, t } from './i18n.js'
 import { realIo } from './io.js'
+import { runManage } from './manage.js'
 import { runMenu } from './menu.js'
-import { runUninstall } from './uninstall.js'
 import { runWizard } from './wizard.js'
 
 const { version } = createRequire(import.meta.url)('../package.json') as { version: string }
@@ -32,8 +32,8 @@ function wrap(fn: () => Promise<void>): () => Promise<void> {
 const cli = cac('oxy')
 cli.command('', t('cli.menu')).action(wrap(() => runMenu(version)))
 cli.command('install', t('cli.install')).action(wrap(runWizard))
+cli.command('manage', t('cli.manage')).action(wrap(runManage))
 cli.command('doctor', t('cli.doctor')).action(wrap(runDoctor))
-cli.command('uninstall', t('cli.uninstall')).action(wrap(runUninstall))
 cli.help()
 cli.version(version)
 
