@@ -6,7 +6,7 @@ import { agentFile } from './probe.js'
 /** 安装/卸载所需的最小 IO 面；真实实现见 io.ts */
 export interface InstallIo {
   exec: (argv: string[]) => Promise<ActionResult>
-  fetchSource: (repo: string, source: string, ref?: string) => Promise<Record<string, Uint8Array>>
+  fetchSource: (repo: string, source: string, kind: 'file' | 'dir', ref?: string) => Promise<Record<string, Uint8Array>>
   writeFile: (path: string, content: Uint8Array) => Promise<void>
   /** 递归删除文件或目录（卸载用） */
   remove: (path: string) => Promise<void>
@@ -34,10 +34,10 @@ export async function installEntry(
       case 'mcp-config':
         return await io.exec(host.mcp.addCommand(entry.id, install.server, env))
       case 'fetch-files': {
-        const target = entry.type === 'agent' ? agentFile(entry.id, host, home) : join(host.skillsDir(home), entry.id)
+        const target = fetchTarget(entry, host, home)
         if (!target)
           return { ok: false, detail: `${host.label} does not support ${entry.type}` }
-        const files = await io.fetchSource(install.repo, install.source, install.ref)
+        const files = await io.fetchSource(install.repo, install.source, entry.type === 'agent' ? 'file' : 'dir', install.ref)
         for (const [rel, content] of Object.entries(files)) {
           // agent 是单文件：target 即落点；skill 是目录：按相对路径展开
           const dest = entry.type === 'agent' ? target : join(target, ...rel.split('/'))
@@ -54,6 +54,11 @@ export async function installEntry(
   }
 }
 
+/** fetch-files 类条目在宿主中的落点（安装写入与卸载删除共用） */
+function fetchTarget(entry: CatalogEntry, host: HostAdapter, home: string): string | null {
+  return entry.type === 'agent' ? agentFile(entry.id, host, home) : join(host.skillsDir(home), entry.id)
+}
+
 /** 仅可逆机制可卸载：mcp 走官方 remove，文件类删落点；spec 不可逆提示手动 */
 export async function uninstallEntry(
   entry: CatalogEntry,
@@ -67,7 +72,7 @@ export async function uninstallEntry(
       case 'mcp-config':
         return await io.exec(host.mcp.removeCommand(entry.id))
       case 'fetch-files': {
-        const target = entry.type === 'agent' ? agentFile(entry.id, host, home) : join(host.skillsDir(home), entry.id)
+        const target = fetchTarget(entry, host, home)
         if (!target)
           return { ok: false, detail: `${host.label} does not support ${entry.type}` }
         await io.remove(target)

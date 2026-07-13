@@ -21,12 +21,10 @@ export function statusOf(entry: CatalogEntry, host: HostAdapter, home: string, i
   const { install } = entry
   switch (install.method) {
     case 'mcp-config': {
-      const text = io.readFile(host.mcp.configPath(home))
-      const installed = host.mcp.parseInstalled(text ?? '')[entry.id]
+      const installed = installedMcp(entry, host, home, io)
       if (!installed)
         return 'missing'
-      const missing = (entry.env ?? []).some(v => v.required && !(v.key in installed.env))
-      return missing ? 'missing-env' : 'installed'
+      return missingEnvKeys(entry, host, home, io).length > 0 ? 'missing-env' : 'installed'
     }
     case 'fetch-files': {
       const target = entry.type === 'agent'
@@ -43,4 +41,18 @@ export function statusOf(entry: CatalogEntry, host: HostAdapter, home: string, i
 export function agentFile(id: string, host: HostAdapter, home: string): string | null {
   const dir = host.agentsDir(home)
   return dir ? join(dir, `${id}.md`) : null
+}
+
+/** 宿主配置中该 MCP 条目的已装记录；未装/不可读为 undefined */
+export function installedMcp(entry: CatalogEntry, host: HostAdapter, home: string, io: ProbeIo) {
+  const text = io.readFile(host.mcp.configPath(home))
+  return host.mcp.parseInstalled(text ?? '')[entry.id]
+}
+
+/** 已装但缺失的必需 env 键（doctor 补配与 missing-env 判定共用） */
+export function missingEnvKeys(entry: CatalogEntry, host: HostAdapter, home: string, io: ProbeIo): string[] {
+  const installed = installedMcp(entry, host, home, io)
+  return (entry.env ?? [])
+    .filter(v => v.required && !(v.key in (installed?.env ?? {})))
+    .map(v => v.key)
 }

@@ -33,6 +33,11 @@ describe('目录不变量（schema 规则）', () => {
     }
   })
 
+  it('agent 条目必须显式声明宿主（禁用原因文案依赖它）', () => {
+    for (const e of CATALOG.filter(e => e.type === 'agent'))
+      expect(e.hosts?.length, e.id).toBeGreaterThan(0)
+  })
+
   it('env 键为大写蛇形，且每条目录条目都有官方主页', () => {
     for (const e of CATALOG) {
       expect(e.homepage, e.id).toMatch(/^https:\/\//)

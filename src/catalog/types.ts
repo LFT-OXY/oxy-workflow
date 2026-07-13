@@ -32,7 +32,8 @@ export interface ShellInstall {
   binary: string
 }
 
-export type InstallSpec = McpConfigInstall | FetchFilesInstall | ShellInstall
+/** 安装机制（命名避开组件类型 Spec，防止一词两义） */
+export type InstallMethod = McpConfigInstall | FetchFilesInstall | ShellInstall
 
 /** 目录条目：一条可安装组件的全部元数据（纯元数据，不含内容，ADR-0001） */
 export interface CatalogEntry {
@@ -45,6 +46,6 @@ export interface CatalogEntry {
   recommended?: boolean
   /** 支持的宿主；省略 = 全部宿主；spec 类忽略宿主（全局安装） */
   hosts?: HostId[]
-  install: InstallSpec
+  install: InstallMethod
   env?: EnvVar[]
 }

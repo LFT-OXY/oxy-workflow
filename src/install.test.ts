@@ -53,8 +53,8 @@ describe('installEntry', () => {
       install: { method: 'fetch-files', repo: 'anthropics/skills', source: 'skills/skill-creator' },
     }
     const { io, calls } = fakeIo({
-      fetchSource: async (repo, source) => {
-        expect([repo, source]).toEqual(['anthropics/skills', 'skills/skill-creator'])
+      fetchSource: async (repo, source, kind) => {
+        expect([repo, source, kind]).toEqual(['anthropics/skills', 'skills/skill-creator', 'dir'])
         return {
           'SKILL.md': new TextEncoder().encode('s'),
           'references/api.md': new TextEncoder().encode('r'),

@@ -8,7 +8,7 @@ import { installEntry } from './install.js'
 import { realIo } from './io.js'
 import { hostPresent, statusOf } from './probe.js'
 import { TYPE_ORDER, TYPE_TITLE } from './ui.js'
-import { buildChoices, installTargets } from './wizard-logic.js'
+import { buildChoices, installHosts } from './wizard-logic.js'
 
 /** 交互向导：宿主选择 → 组件多选 → env 引导 → 执行 → 汇总（PRD 验收 1-4） */
 export async function runWizard(): Promise<void> {
@@ -53,9 +53,15 @@ export async function runWizard(): Promise<void> {
     return
   }
 
+  // 只对真正有安装目标的条目走后续流程；选了但已装满的仅提示
+  const plans = picked.map(entry => ({ entry, hosts: installHosts(entry, selected, status) }))
+  for (const p of plans.filter(p => p.hosts.length === 0))
+    console.log(pc.dim(`  ${p.entry.id} already installed everywhere, skipped`))
+  const todo = plans.filter(p => p.hosts.length > 0)
+
   // 3. env 引导（可跳过；跳过的必需项由 doctor 补配）
   const envValues: Record<string, Record<string, string>> = {}
-  for (const entry of picked) {
+  for (const { entry } of todo) {
     for (const v of entry.env ?? []) {
       const suffix = v.required ? '' : ' (optional, Enter to skip)'
       const hint = v.hint ? pc.dim(` ${v.hint}`) : ''
@@ -68,8 +74,8 @@ export async function runWizard(): Promise<void> {
   // 4. 逐条执行，单条失败跳过不中断
   const failures: string[] = []
   let done = 0
-  for (const entry of picked) {
-    for (const host of installTargets(entry, selected, status)) {
+  for (const { entry, hosts } of todo) {
+    for (const host of hosts) {
       const where = entry.type === 'spec' ? 'global' : host.id
       process.stdout.write(`  ${entry.id} ${pc.dim(`→ ${where}`)} ... `)
       const r = await installEntry(entry, host, home, envValues[entry.id] ?? {}, io)

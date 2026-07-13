@@ -1,6 +1,7 @@
 import type { CatalogEntry } from './catalog/types.js'
 import type { HostAdapter } from './hosts/types.js'
 import type { Status } from './probe.js'
+import { hostById } from './hosts/index.js'
 
 /** 探测查询函数：向导把真实 IO 探测柯里化后传入，纯逻辑可测 */
 export type StatusLookup = (entry: CatalogEntry, host: HostAdapter) => Status
@@ -19,6 +20,7 @@ export interface ChoiceRow {
 export function supportsHost(entry: CatalogEntry, host: HostAdapter): boolean {
   if (entry.type === 'spec')
     return true
+  // agentsDir 是 home 的纯函数：传空串即可判断该宿主有无 subagent 概念（null = 无）
   if (entry.type === 'agent' && host.agentsDir('') === null)
     return false
   return (entry.hosts ?? [host.id]).includes(host.id)
@@ -30,7 +32,7 @@ function applicableHosts(entry: CatalogEntry, selected: HostAdapter[]): HostAdap
 }
 
 /** 真正要执行安装的宿主：适用 ∧ 未装（missing-env 视为已装，补配走 doctor） */
-export function installTargets(entry: CatalogEntry, selected: HostAdapter[], status: StatusLookup): HostAdapter[] {
+export function installHosts(entry: CatalogEntry, selected: HostAdapter[], status: StatusLookup): HostAdapter[] {
   const applicable = applicableHosts(entry, selected)
   if (entry.type === 'spec') {
     // 全局安装：任一宿主视角 missing 才装，且只装一次
@@ -44,11 +46,12 @@ export function buildChoices(catalog: CatalogEntry[], selected: HostAdapter[], s
   return catalog.map((entry) => {
     const applicable = applicableHosts(entry, selected)
     if (applicable.length === 0) {
-      const wanted = (entry.hosts ?? []).join(', ') || 'Claude Code'
-      return { entry, checked: false, disabled: `requires ${wanted === 'claude' ? 'Claude Code' : wanted}`, note: '' }
+      // 禁用原因用适配器注册表里的正式 label，新增宿主无需改这里（ADR-0005）
+      const wanted = (entry.hosts ?? []).map(id => hostById(id).label).join(', ')
+      return { entry, checked: false, disabled: `requires ${wanted || 'a supported host'}`, note: '' }
     }
 
-    const missing = installTargets(entry, selected, status)
+    const missing = installHosts(entry, selected, status)
     const installedOn = applicable.filter(h => status(entry, h) !== 'missing')
     const note = missing.length === 0
       ? 'installed'

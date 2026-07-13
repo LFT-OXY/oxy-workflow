@@ -21,7 +21,7 @@ export function realIo(): Io {
     },
     hasBinary,
     exec,
-    fetchSource: (repo, source, ref) => fetchSource(repo, source, ref),
+    fetchSource: (repo, source, kind, ref) => fetchSource(repo, source, kind, ref),
     writeFile: async (path, content) => {
       mkdirSync(dirname(path), { recursive: true })
       writeFileSync(path, content)

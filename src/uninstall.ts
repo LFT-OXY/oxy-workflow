@@ -43,14 +43,15 @@ export async function runUninstall(): Promise<void> {
     console.log('Nothing selected, bye.')
     return
   }
-  if (!await confirm({ message: `Remove ${picked.length} component(s)?`, default: false }))
-    return
 
+  // 逐项确认后再删（ADR-0004：无状态无法判断归属，确认是唯一防线）
   let failed = 0
   for (const key of picked) {
     const [entryId, hostId] = key.split('@')
     const entry = CATALOG.find(e => e.id === entryId)!
     const host = HOSTS.find(h => h.id === hostId)!
+    if (!await confirm({ message: `Remove ${entry.name} on ${host.label}?`, default: false }))
+      continue
     const r = await uninstallEntry(entry, host, home, io)
     console.log(r.ok ? pc.green(`  removed ${key}`) : pc.red(`  failed ${key}: ${r.detail}`))
     if (!r.ok)

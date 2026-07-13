@@ -10,16 +10,18 @@ export interface FetchLike {
 
 /**
  * 从官方 GitHub repo 抓取组件内容（ADR-0001：安装时才从上游取内容）。
- * source 为目录 → tree API 一次列举 + raw 逐个下载，键为相对路径；
- * source 为单文件 → 直接 raw，键为文件名。ref 缺省 HEAD（默认分支）。
+ * kind 由调用方按组件类型语义指定（agent=file / skill=dir），不做猜测：
+ * dir → tree API 一次列举 + raw 逐个下载，键为相对路径；
+ * file → 直接 raw，键为文件名。ref 缺省 HEAD（默认分支）。
  */
 export async function fetchSource(
   repo: string,
   source: string,
+  kind: 'file' | 'dir',
   ref = 'HEAD',
   fetchFn: FetchLike = fetch,
 ): Promise<Record<string, Uint8Array>> {
-  if (/\.[a-z0-9]+$/i.test(source))
+  if (kind === 'file')
     return { [source.split('/').pop()!]: await raw(repo, ref, source, fetchFn) }
 
   const res = await fetchFn(`https://api.github.com/repos/${repo}/git/trees/${ref}?recursive=1`)

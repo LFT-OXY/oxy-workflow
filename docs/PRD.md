@@ -25,7 +25,7 @@
 
 | 类型 | claude | codex | 安装机制 | 探测 | 卸载 |
 |------|:--:|:--:|---|---|---|
-| mcp | ✓ | ✓ | `claude mcp add-json -s user` / `codex mcp add --env` | 解析 `~/.claude.json` / `~/.codex/config.toml`（只读） | `claude mcp remove -s user` / `codex mcp remove` |
+| mcp | ✓ | ✓ | `claude mcp add -s user -e K=V --` / `codex mcp add --env K=V --`（参数式，规避 JSON 引号跨平台问题） | 解析 `~/.claude.json` / `~/.codex/config.toml`（只读） | `claude mcp remove -s user` / `codex mcp remove` |
 | skill | ✓ | ✓ | fetch 官方 repo 的技能目录 → 宿主 skills 目录 | `<skillsDir>/<id>/SKILL.md` 存在 | 删目录 |
 | agent | ✓ | — | fetch 官方 repo 单文件 → `~/.claude/agents/<id>.md` | 文件存在 | 删文件 |
 | spec | 全局 | 全局 | 执行官方安装命令 | PATH 上可解析二进制 | 提示手动卸载 |
@@ -66,15 +66,18 @@
 ## CLI
 
 - `oxy`：向导（宿主选择 → 组件多选 → env 引导 → 执行 → 汇总）
-- `oxy doctor`：全量探测报告
-- `oxy uninstall`：交互式卸载（仅可逆机制）
-- 退出码：向导完成（含部分失败已汇总）为 0；参数/环境错误为 1
+- `oxy doctor`：全量探测报告 + 缺失必需 env 现场补配（合并既有
+  env 重注册，不丢已配置键）
+- `oxy uninstall`：交互式卸载（仅可逆机制，逐项确认）
+- 退出码：向导完成（含部分失败已汇总）为 0；参数/环境错误为 1；
+  用户 Ctrl-C 中断为 130（Unix 惯例）
 
 ## 非目标（v2+）
 
 plugin 类型（`claude plugin install` 已核实可行，留作类型扩展）、
 远程目录索引、更多宿主（Gemini CLI 等）、非交互 `--all`、界面
-中文 i18n（v1 界面英文，文案集中于一处便于后补）。
+中文 i18n（v1 界面英文；共用文案已集中 ui.ts，全量抽取随 i18n
+一并做，v1 不强求）。
 
 ## 工程
 

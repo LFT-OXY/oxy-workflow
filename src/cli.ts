@@ -28,5 +28,13 @@ cli.command('doctor', 'Probe hosts & components, finish missing env setup').acti
 cli.command('uninstall', 'Remove installed components (reversible mechanisms only)').action(wrap(runUninstall))
 cli.help()
 cli.version(version)
-cli.parse(process.argv, { run: false })
-await cli.runMatchedCommand()
+
+// 参数/命令错误也走红字 + 退出码 1，不裸抛堆栈（PRD：参数错误为 1）
+try {
+  cli.parse(process.argv, { run: false })
+  await cli.runMatchedCommand()
+}
+catch (err) {
+  console.error(pc.red(err instanceof Error ? err.message : String(err)))
+  process.exitCode = 1
+}

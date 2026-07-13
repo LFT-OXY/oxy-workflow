@@ -3,7 +3,7 @@ import type { Status } from './probe.js'
 import { describe, expect, it } from 'vitest'
 import { claude } from './hosts/claude.js'
 import { codex } from './hosts/codex.js'
-import { buildChoices, installTargets } from './wizard-logic.js'
+import { buildChoices, installHosts } from './wizard-logic.js'
 
 function entry(partial: Partial<CatalogEntry> & Pick<CatalogEntry, 'id' | 'type'>): CatalogEntry {
   return {
@@ -51,21 +51,21 @@ describe('buildChoices：向导选择行', () => {
   })
 })
 
-describe('installTargets：真正要执行安装的 (条目×宿主) 对', () => {
+describe('installHosts：真正要执行安装的 (条目×宿主) 对', () => {
   it('跳过已装宿主，只装缺的', () => {
-    const targets = installTargets(skill, [claude, codex], statuses({ 's1@claude': 'installed' }))
+    const targets = installHosts(skill, [claude, codex], statuses({ 's1@claude': 'installed' }))
     expect(targets.map(h => h.id)).toEqual(['codex'])
   })
 
   it('spec 与宿主无关：缺则恰好一次，装齐则零次', () => {
     const spec = entry({ id: 'openspec', type: 'spec' })
-    expect(installTargets(spec, [claude, codex], statuses({})).length).toBe(1)
-    expect(installTargets(spec, [claude, codex], statuses({ 'openspec@claude': 'installed', 'openspec@codex': 'installed' })).length).toBe(0)
+    expect(installHosts(spec, [claude, codex], statuses({})).length).toBe(1)
+    expect(installHosts(spec, [claude, codex], statuses({ 'openspec@claude': 'installed', 'openspec@codex': 'installed' })).length).toBe(0)
   })
 
   it('missing-env 视为已装（补 env 是 doctor 的事，不重复安装）', () => {
     const mcp = entry({ id: 'm1', type: 'mcp', install: { method: 'mcp-config', server: { command: 'npx' } } })
-    const targets = installTargets(mcp, [claude], statuses({ 'm1@claude': 'missing-env' }))
+    const targets = installHosts(mcp, [claude], statuses({ 'm1@claude': 'missing-env' }))
     expect(targets.length).toBe(0)
   })
 })

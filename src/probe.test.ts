@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { claude } from './hosts/claude.js'
 import { codex } from './hosts/codex.js'
-import { hostPresent, statusOf } from './probe.js'
+import { hostPresent, missingEnvKeys, statusOf } from './probe.js'
 
 const HOME = join('/home', 'u')
 
@@ -43,6 +43,20 @@ describe('组件探测（无状态，ADR-0004）', () => {
     expect(statusOf(mcpEntry, claude, HOME, fakeIo({}))).toBe('missing')
     expect(statusOf(mcpEntry, claude, HOME, fakeIo({ [path]: cfg({}) }))).toBe('missing-env')
     expect(statusOf(mcpEntry, claude, HOME, fakeIo({ [path]: cfg({ MUST_HAVE: 'v' }) }))).toBe('installed')
+  })
+
+  it('missingEnvKeys：只列缺失的必需键（doctor 补配数据源）', () => {
+    const entry: CatalogEntry = {
+      ...mcpEntry,
+      env: [
+        { key: 'MUST_HAVE', required: true },
+        { key: 'ALSO_MUST', required: true },
+        { key: 'OPTIONAL', required: false },
+      ],
+    }
+    const path = claude.mcp.configPath(HOME)
+    const io = fakeIo({ [path]: JSON.stringify({ mcpServers: { context7: { command: 'npx', env: { MUST_HAVE: 'v' } } } }) })
+    expect(missingEnvKeys(entry, claude, HOME, io)).toEqual(['ALSO_MUST'])
   })
 
   it('skill：宿主 skills 目录下存在 <id>/SKILL.md 即已装（双宿主各查各的）', () => {

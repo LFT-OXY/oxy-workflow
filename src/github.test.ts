@@ -28,19 +28,19 @@ describe('fetchSource：从官方 repo 抓取组件内容', () => {
         'skills/skill-creator/references/api.md': 'ref body',
       },
     )
-    const files = await fetchSource('o/r', 'skills/skill-creator', undefined, fetchFn)
+    const files = await fetchSource('o/r', 'skills/skill-creator', 'dir', undefined, fetchFn)
     expect(Object.keys(files).sort()).toEqual(['SKILL.md', 'references/api.md'])
     expect(new TextDecoder().decode(files['SKILL.md'])).toBe('skill body')
   })
 
-  it('单文件 source：直接抓 raw，键为文件名', async () => {
+  it('kind=file：直接抓 raw，键为文件名（语义由调用方按类型指定，不猜扩展名）', async () => {
     const fetchFn = fakeGithub([], { 'agents/code-refactorer.md': 'agent body' })
-    const files = await fetchSource('o/r', 'agents/code-refactorer.md', undefined, fetchFn)
+    const files = await fetchSource('o/r', 'agents/code-refactorer.md', 'file', undefined, fetchFn)
     expect(Object.keys(files)).toEqual(['code-refactorer.md'])
   })
 
   it('source 下无文件时报错（避免静默装空目录）', async () => {
     const fetchFn = fakeGithub([{ path: 'x/y.md', type: 'blob' }], {})
-    await expect(fetchSource('o/r', 'skills/nope', undefined, fetchFn)).rejects.toThrow(/no files/)
+    await expect(fetchSource('o/r', 'skills/nope', 'dir', undefined, fetchFn)).rejects.toThrow(/no files/)
   })
 })
