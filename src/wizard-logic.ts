@@ -2,6 +2,7 @@ import type { CatalogEntry } from './catalog/types.js'
 import type { HostAdapter } from './hosts/types.js'
 import type { Status } from './probe.js'
 import { hostById } from './hosts/index.js'
+import { t } from './i18n.js'
 
 /** 探测查询函数：向导把真实 IO 探测柯里化后传入，纯逻辑可测 */
 export type StatusLookup = (entry: CatalogEntry, host: HostAdapter) => Status
@@ -48,16 +49,16 @@ export function buildChoices(catalog: CatalogEntry[], selected: HostAdapter[], s
     if (applicable.length === 0) {
       // 禁用原因用适配器注册表里的正式 label，新增宿主无需改这里（ADR-0005）
       const wanted = (entry.hosts ?? []).map(id => hostById(id).label).join(', ')
-      return { entry, checked: false, disabled: `requires ${wanted || 'a supported host'}`, note: '' }
+      return { entry, checked: false, disabled: t('logic.requires', { hosts: wanted || t('logic.supportedHost') }), note: '' }
     }
 
     const missing = installHosts(entry, selected, status)
     const installedOn = applicable.filter(h => status(entry, h) !== 'missing')
     const note = missing.length === 0
-      ? 'installed'
+      ? t('status.installed')
       : installedOn.length > 0
-        ? `installed on ${installedOn.map(h => h.id).join(', ')}`
-        : entry.hosts ? `${entry.hosts.join(', ')} only` : ''
+        ? t('logic.installedOn', { hosts: installedOn.map(h => h.id).join(', ') })
+        : entry.hosts ? t('logic.hostsOnly', { hosts: entry.hosts.join(', ') }) : ''
 
     return {
       entry,

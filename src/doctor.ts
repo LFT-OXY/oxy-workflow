@@ -5,6 +5,7 @@ import { password } from '@inquirer/prompts'
 import pc from 'picocolors'
 import { CATALOG } from './catalog/entries.js'
 import { HOSTS } from './hosts/index.js'
+import { t } from './i18n.js'
 import { installEntry } from './install.js'
 import { realIo } from './io.js'
 import { hostPresent, installedMcp, missingEnvKeys, statusOf } from './probe.js'
@@ -19,7 +20,7 @@ export async function runDoctor(): Promise<void> {
 
   for (const host of HOSTS) {
     const present = hostPresent(host, home, io)
-    console.log(pc.bold(host.label) + (present ? '' : pc.dim(' — not detected')))
+    console.log(pc.bold(host.label) + (present ? '' : pc.dim(` — ${t('common.notDetected')}`)))
     if (!present)
       continue
     for (const entry of CATALOG.filter(e => e.type !== 'spec' && supportsHost(e, host))) {
@@ -33,7 +34,7 @@ export async function runDoctor(): Promise<void> {
       console.log(line)
     }
   }
-  console.log(pc.bold('Global tools'))
+  console.log(pc.bold(t('doctor.globalTools')))
   for (const entry of CATALOG.filter(e => e.type === 'spec'))
     console.log(`  ${entry.id.padEnd(18)} ${statusLabel(statusOf(entry, HOSTS[0]!, home, io))}`)
 
@@ -42,7 +43,7 @@ export async function runDoctor(): Promise<void> {
     console.log()
     const entered: Record<string, string> = {}
     for (const key of keys) {
-      const value = await password({ message: `${entry.name} on ${host.label} · ${key} (Enter to skip)`, mask: '*' })
+      const value = await password({ message: t('doctor.envPrompt', { name: entry.name, host: host.label, key }), mask: '*' })
       if (value)
         entered[key] = value
     }
@@ -51,10 +52,12 @@ export async function runDoctor(): Promise<void> {
     const merged = { ...installedMcp(entry, host, home, io)?.env, ...entered }
     const removed = await io.exec(host.mcp.removeCommand(entry.id))
     if (!removed.ok) {
-      console.log(pc.red(`  ${entry.id} failed to re-register: ${removed.detail}`))
+      console.log(pc.red(`  ${t('doctor.reRegisterFailed', { id: entry.id, detail: removed.detail })}`))
       continue
     }
     const r = await installEntry(entry, host, home, merged, io)
-    console.log(r.ok ? pc.green(`  ${entry.id} env configured`) : pc.red(`  ${entry.id} failed: ${r.detail}`))
+    console.log(r.ok
+      ? pc.green(`  ${t('doctor.envConfigured', { id: entry.id })}`)
+      : pc.red(`  ${t('doctor.envFailed', { id: entry.id, detail: r.detail })}`))
   }
 }

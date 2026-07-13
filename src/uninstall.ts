@@ -3,6 +3,7 @@ import { checkbox, confirm } from '@inquirer/prompts'
 import pc from 'picocolors'
 import { CATALOG } from './catalog/entries.js'
 import { HOSTS } from './hosts/index.js'
+import { t } from './i18n.js'
 import { uninstallEntry } from './install.js'
 import { realIo } from './io.js'
 import { hostPresent, statusOf } from './probe.js'
@@ -17,30 +18,30 @@ export async function runUninstall(): Promise<void> {
   for (const host of HOSTS.filter(h => hostPresent(h, home, io))) {
     for (const entry of CATALOG.filter(e => e.type !== 'spec' && supportsHost(e, host))) {
       if (statusOf(entry, host, home, io) !== 'missing')
-        removable.push({ key: `${entry.id}@${host.id}`, name: `${entry.name} ${pc.dim(`on ${host.label}`)}` })
+        removable.push({ key: `${entry.id}@${host.id}`, name: `${entry.name} ${pc.dim(t('uninstall.onHost', { host: host.label }))}` })
     }
   }
   const specInstalled = CATALOG.filter(e =>
     e.type === 'spec' && statusOf(e, HOSTS[0]!, home, io) === 'installed')
 
   if (removable.length === 0 && specInstalled.length === 0) {
-    console.log('Nothing installed by catalog entries was found.')
+    console.log(t('uninstall.nothingFound'))
     return
   }
 
   const picked = await checkbox<string>({
-    message: 'Select components to remove',
+    message: t('uninstall.pick'),
     choices: [
       ...removable.map(r => ({ value: r.key, name: r.name })),
       ...specInstalled.map(e => ({
         value: e.id,
         name: e.name,
-        disabled: pc.dim('(global CLI, uninstall manually)'),
+        disabled: pc.dim(`(${t('uninstall.globalCli')})`),
       })),
     ],
   })
   if (picked.length === 0) {
-    console.log('Nothing selected, bye.')
+    console.log(t('common.nothingSelected'))
     return
   }
 
@@ -50,13 +51,15 @@ export async function runUninstall(): Promise<void> {
     const [entryId, hostId] = key.split('@')
     const entry = CATALOG.find(e => e.id === entryId)!
     const host = HOSTS.find(h => h.id === hostId)!
-    if (!await confirm({ message: `Remove ${entry.name} on ${host.label}?`, default: false }))
+    if (!await confirm({ message: t('uninstall.confirm', { name: entry.name, host: host.label }), default: false }))
       continue
     const r = await uninstallEntry(entry, host, home, io)
-    console.log(r.ok ? pc.green(`  removed ${key}`) : pc.red(`  failed ${key}: ${r.detail}`))
+    console.log(r.ok
+      ? pc.green(`  ${t('uninstall.removed', { key })}`)
+      : pc.red(`  ${t('uninstall.failedItem', { key, detail: r.detail })}`))
     if (!r.ok)
       failed++
   }
   if (failed === 0)
-    console.log(pc.dim('Done. `npx oxy-workflow doctor` to verify.'))
+    console.log(pc.dim(t('uninstall.doneHint')))
 }
