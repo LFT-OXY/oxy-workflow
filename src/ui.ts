@@ -14,7 +14,7 @@ export function statusLabel(status: Status): string {
   }
 }
 
-export const TYPE_ORDER = ['mcp', 'skill', 'agent', 'spec'] as const
+export const TYPE_ORDER = ['skill', 'mcp', 'agent', 'spec'] as const
 
 /** 类型分组标题；随当前显示语言运行时求值，不能做常量表 */
 export function typeTitle(type: (typeof TYPE_ORDER)[number]): string {

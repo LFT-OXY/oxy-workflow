@@ -3,7 +3,7 @@ import type { Status } from './probe.js'
 import { describe, expect, it } from 'vitest'
 import { claude } from './hosts/claude.js'
 import { codex } from './hosts/codex.js'
-import { buildChoices, installHosts } from './wizard-logic.js'
+import { buildChoices, installHosts, prunePicks, screenTypes } from './wizard-logic.js'
 
 function entry(partial: Partial<CatalogEntry> & Pick<CatalogEntry, 'id' | 'type'>): CatalogEntry {
   return {
@@ -48,6 +48,36 @@ describe('buildChoices：向导选择行', () => {
     const row = rows[0]!
     expect(row.checked).toBe(true)
     expect(row.note).toMatch(/claude/i)
+  })
+
+  it('回访屏传入存留勾选 → 覆盖默认预选（勾选过的恢复，取消过的不再预选）', () => {
+    const rows = buildChoices([skill, agent], [claude], statuses({}), ['a1'])
+    expect(rows.find(r => r.entry.id === 'a1')!.checked).toBe(true)
+    expect(rows.find(r => r.entry.id === 's1')!.checked).toBe(false)
+  })
+
+  it('禁用行即使在存留勾选中也不勾选', () => {
+    const rows = buildChoices([agent], [codex], statuses({}), ['a1'])
+    expect(rows[0]!.checked).toBe(false)
+  })
+})
+
+describe('screenTypes：分屏选择链的屏幕清单', () => {
+  it('按 skill 首位的全局顺序排列，目录中无条目的类型整屏跳过', () => {
+    const mcp = entry({ id: 'm1', type: 'mcp', install: { method: 'mcp-config', server: { command: 'npx' } } })
+    expect(screenTypes([mcp, skill])).toEqual(['skill', 'mcp'])
+    expect(screenTypes([skill])).toEqual(['skill'])
+    expect(screenTypes([])).toEqual([])
+  })
+})
+
+describe('prunePicks：改宿主后的勾选存留', () => {
+  it('仍适用的保留，不再适用的静默丢弃，spec 恒保留', () => {
+    const spec = entry({ id: 'openspec', type: 'spec' })
+    const catalog = [skill, agent, spec]
+    // claude → codex：agent（仅 claude）被丢弃，skill 与 spec 保留
+    expect(prunePicks(['s1', 'a1', 'openspec'], catalog, [codex])).toEqual(['s1', 'openspec'])
+    expect(prunePicks(['s1', 'a1', 'openspec'], catalog, [claude])).toEqual(['s1', 'a1', 'openspec'])
   })
 })
 
