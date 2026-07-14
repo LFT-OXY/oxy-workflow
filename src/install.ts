@@ -31,8 +31,15 @@ export async function installEntry(
   try {
     const { install } = entry
     switch (install.method) {
-      case 'mcp-config':
+      case 'mcp-config': {
+        // 需预编译的 MCP：先跑跨平台前置命令，失败则不再 add（ADR-0009）
+        if (install.prerequisite) {
+          const pre = await io.exec(install.prerequisite.split(' '))
+          if (!pre.ok)
+            return pre
+        }
         return await io.exec(host.mcp.addCommand(entry.id, install.server, env))
+      }
       case 'fetch-files': {
         const target = fetchTarget(entry, host, home)
         if (!target)
@@ -45,7 +52,18 @@ export async function installEntry(
         }
         return { ok: true, detail: '' }
       }
+      case 'fetch-collection': {
+        // 合集：抓 source 下所有文件，rel 已含子技能名，直接落到 skills 顶层即摊平
+        const files = await io.fetchSource(install.repo, install.source, 'dir', install.ref)
+        const skillsDir = host.skillsDir(home)
+        for (const [rel, content] of Object.entries(files))
+          await io.writeFile(join(skillsDir, ...rel.split('/')), content)
+        return { ok: true, detail: '' }
+      }
       case 'shell':
+        return await io.exec(install.command.split(' '))
+      case 'plugin':
+        // 插件跑自己的官方安装命令，内容落宿主目录
         return await io.exec(install.command.split(' '))
     }
   }
@@ -78,8 +96,23 @@ export async function uninstallEntry(
         await io.remove(target)
         return { ok: true, detail: '' }
       }
+      case 'fetch-collection': {
+        // 无 manifest（ADR-0004）：重列仓库树，取顶层子技能名逐个删
+        const files = await io.fetchSource(install.repo, install.source, 'dir', install.ref)
+        const children = new Set(Object.keys(files).map(rel => rel.split('/')[0]))
+        const skillsDir = host.skillsDir(home)
+        for (const child of children)
+          await io.remove(join(skillsDir, child))
+        return { ok: true, detail: '' }
+      }
       case 'shell':
         return { ok: false, detail: `not reversible, manual uninstall (installed via: ${install.command})` }
+      case 'plugin':
+        // 有官方卸载命令走命令，否则删宿主内标记路径
+        if (install.uninstall)
+          return await io.exec(install.uninstall.split(' '))
+        await io.remove(join(host.root(home), ...install.marker.split('/')))
+        return { ok: true, detail: '' }
     }
   }
   catch (err) {

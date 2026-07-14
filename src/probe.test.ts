@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { claude } from './hosts/claude.js'
 import { codex } from './hosts/codex.js'
-import { hostPresent, missingEnvKeys, statusOf } from './probe.js'
+import { hostCliInstalled, hostPresent, missingEnvKeys, statusOf } from './probe.js'
 
 const HOME = join('/home', 'u')
 
@@ -32,6 +32,12 @@ describe('宿主存在性探测', () => {
     const io = fakeIo({ [join(HOME, '.claude')]: '' })
     expect(hostPresent(claude, HOME, io)).toBe(true)
     expect(hostPresent(codex, HOME, io)).toBe(false)
+  })
+
+  it('宿主 CLI 是否已装看 PATH binary（引导安装/跳转的依据，非配置目录）', () => {
+    expect(hostCliInstalled(claude, fakeIo({}, ['claude']))).toBe(true)
+    expect(hostCliInstalled(claude, fakeIo({}))).toBe(false)
+    expect(hostCliInstalled(codex, fakeIo({}, ['codex']))).toBe(true)
   })
 })
 
@@ -86,6 +92,47 @@ describe('组件探测（无状态，ADR-0004）', () => {
     const io = fakeIo({ [join(HOME, '.claude', 'agents', 'code-refactorer.md')]: '' })
     expect(statusOf(agent, claude, HOME, io)).toBe('installed')
     expect(statusOf(agent, claude, HOME, fakeIo({}))).toBe('missing')
+  })
+
+  it('plugin：宿主内标记路径存在即已装（探 marker，非 binary）', () => {
+    const plugin: CatalogEntry = {
+      id: 'ccg',
+      type: 'plugin',
+      name: '',
+      summary: { en: '', zh: '' },
+      homepage: 'https://x',
+      install: { method: 'plugin', command: 'x', marker: 'skills/ccg' },
+    }
+    const io = fakeIo({ [join(claude.root(HOME), 'skills', 'ccg')]: '' })
+    expect(statusOf(plugin, claude, HOME, io)).toBe('installed')
+    expect(statusOf(plugin, claude, HOME, fakeIo({}))).toBe('missing')
+  })
+
+  it('skill-collection：哨兵子技能的 SKILL.md 存在即已装', () => {
+    const coll: CatalogEntry = {
+      id: 'mp-skills',
+      type: 'skill-collection',
+      name: '',
+      summary: { en: '', zh: '' },
+      homepage: 'https://x',
+      install: { method: 'fetch-collection', repo: 'o/r', source: 'skills', sentinel: 'flagship' },
+    }
+    const io = fakeIo({ [join(claude.skillsDir(HOME), 'flagship', 'SKILL.md')]: '' })
+    expect(statusOf(coll, claude, HOME, io)).toBe('installed')
+    expect(statusOf(coll, claude, HOME, fakeIo({}))).toBe('missing')
+  })
+
+  it('cli：与 spec 同走 shell，PATH 有 binary 即已装', () => {
+    const cli: CatalogEntry = {
+      id: 'auggie',
+      type: 'cli',
+      name: '',
+      summary: { en: '', zh: '' },
+      homepage: 'https://x',
+      install: { method: 'shell', command: 'npm i -g @augmentcode/auggie', binary: 'auggie' },
+    }
+    expect(statusOf(cli, claude, HOME, fakeIo({}, ['auggie']))).toBe('installed')
+    expect(statusOf(cli, claude, HOME, fakeIo({}))).toBe('missing')
   })
 
   it('spec：PATH 上能解析二进制即已装（与宿主无关）', () => {

@@ -1,10 +1,12 @@
+import type { EntryType, InstallMethod } from './types.js'
 import { describe, expect, it } from 'vitest'
 import { CATALOG } from './entries.js'
 
 describe('种子目录', () => {
-  it('四种组件类型各至少收录一条（v1 发布门槛）', () => {
+  it('至少覆盖 mcp/skill/agent/spec 四类核心组件（v1 发布门槛）', () => {
     const types = new Set(CATALOG.map(e => e.type))
-    expect(types).toEqual(new Set(['mcp', 'skill', 'agent', 'spec']))
+    for (const core of ['mcp', 'skill', 'agent', 'spec'] as const)
+      expect(types.has(core), core).toBe(true)
   })
 })
 
@@ -16,8 +18,16 @@ describe('目录不变量（schema 规则）', () => {
       expect(id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/)
   })
 
-  it('类型与安装机制一一对应', () => {
-    const expected = { mcp: 'mcp-config', skill: 'fetch-files', agent: 'fetch-files', spec: 'shell' } as const
+  it('类型对应的安装机制正确（cli/spec 同走 shell）', () => {
+    const expected: Record<EntryType, InstallMethod['method']> = {
+      mcp: 'mcp-config',
+      skill: 'fetch-files',
+      'skill-collection': 'fetch-collection',
+      agent: 'fetch-files',
+      spec: 'shell',
+      cli: 'shell',
+      plugin: 'plugin',
+    }
     for (const e of CATALOG)
       expect(e.install.method, e.id).toBe(expected[e.type])
   })

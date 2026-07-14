@@ -6,6 +6,8 @@ import { parse } from 'smol-toml'
 export const codex: HostAdapter = {
   id: 'codex',
   label: 'Codex',
+  installCommand: 'npm install -g @openai/codex',
+  binary: 'codex',
   root: home => join(home, '.codex'),
   skillsDir: home => join(home, '.codex', 'skills'),
   agentsDir: () => null,

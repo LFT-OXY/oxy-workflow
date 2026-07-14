@@ -12,7 +12,7 @@ import { installEntry, uninstallEntry } from './install.js'
 import { realIo } from './io.js'
 import { entryActions, hostStates } from './manage-logic.js'
 import { hostPresent, statusOf } from './probe.js'
-import { promptEnv, statusLabel, TYPE_ORDER, typeTitle } from './ui.js'
+import { isGlobalType, promptEnv, statusLabel, TYPE_ORDER, typeTitle } from './ui.js'
 
 /** 返回伪选项的哨兵值；目录条目 id 不使用双下划线前缀，不会冲突 */
 const BACK = '__back__'
@@ -97,9 +97,9 @@ function printDetail(entry: CatalogEntry, states: HostState[]): void {
     console.log(pc.dim(`  (${t('manage.globalCli')})`))
 }
 
-/** 状态徽标：✓ 已装（缺 env 黄）/ ✗ 未装；spec 视角显示为 global */
+/** 状态徽标：✓ 已装（缺 env 黄）/ ✗ 未装；全局工具视角显示为 global */
 function badge(entry: CatalogEntry, s: HostState): string {
-  const name = entry.type === 'spec' ? 'global' : s.host.id
+  const name = isGlobalType(entry.type) ? 'global' : s.host.id
   if (s.status === 'installed')
     return pc.green(`${name} ✓`)
   if (s.status === 'missing-env')
@@ -111,7 +111,7 @@ function badge(entry: CatalogEntry, s: HostState): string {
 function actionLabel(entry: CatalogEntry, a: ManageAction): string {
   if (a.kind === 'uninstall')
     return t('manage.actionUninstall', { host: a.host.label })
-  if (entry.type === 'spec')
+  if (isGlobalType(entry.type))
     return t('manage.actionInstallGlobal')
   const mark = a.detected ? '' : ` ${pc.dim(`(${t('common.notDetected')})`)}`
   return `${t('manage.actionInstall', { host: a.host.label })}${mark}`
@@ -125,8 +125,12 @@ function installLabel(entry: CatalogEntry): string {
       return `mcp-config · ${[install.server.command, ...(install.server.args ?? [])].join(' ')}`
     case 'fetch-files':
       return `fetch-files · ${install.repo} / ${install.source}`
+    case 'fetch-collection':
+      return `fetch-collection · ${install.repo} / ${install.source}`
     case 'shell':
       return `shell · ${install.command}`
+    case 'plugin':
+      return `plugin · ${install.command}`
   }
 }
 

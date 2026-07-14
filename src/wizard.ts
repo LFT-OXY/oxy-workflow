@@ -2,6 +2,7 @@ import type { CatalogEntry, EntryType, HostId } from './catalog/types.js'
 import type { HostAdapter } from './hosts/types.js'
 import { homedir } from 'node:os'
 import pc from 'picocolors'
+import { runAgentInstall } from './agent-install.js'
 import { CATALOG } from './catalog/entries.js'
 import { HOSTS, hostById } from './hosts/index.js'
 import { installEntry } from './install.js'
@@ -9,35 +10,47 @@ import { realIo } from './io.js'
 import type { MultiResult } from './list-prompt.js'
 import { localize, t } from './i18n.js'
 import { multiSelect, singleSelect } from './list-prompt.js'
-import { hostPresent, statusOf } from './probe.js'
-import { promptEnv, typeTitle } from './ui.js'
+import { hostCliInstalled, hostPresent, statusOf } from './probe.js'
+import { isGlobalType, promptEnv, typeTitle } from './ui.js'
 import { buildChoices, installHosts, prunePicks, screenTypes } from './wizard-logic.js'
 
-/** 条目的安装去向展示口径（spec 全局安装，与宿主无关） */
+/** 条目的安装去向展示口径（全局工具与宿主无关，显示 global） */
 function targetLabel(entry: CatalogEntry, hosts: HostAdapter[]): string {
-  return entry.type === 'spec' ? 'global' : hosts.map(h => h.id).join(', ')
+  return isGlobalType(entry.type) ? 'global' : hosts.map(h => h.id).join(', ')
 }
 
 /**
- * 交互向导（PRD 验收 1-4）：
+ * 交互向导（PRD 验收 1-4）：按组件类型拆入口后，allowedTypes 限定本次覆盖的
+ * 类型；全为全局工具时跳过选宿主屏、直接进类型屏（ADR-0009）。
  * 宿主选择 ↔ 类型分屏多选 ↔ 汇总确认 → env 引导 → 逐条安装 → 汇总。
  * 确认前全链可退（每屏顶部返回行 / Esc 后退一层，ADR-0007），确认后不可逆。
+ * allowedTypes 缺省 = 全部宿主组件类型（供 `oxy install` 平铺入口）。
  */
-export async function runWizard(): Promise<void> {
+export async function runWizard(allowedTypes?: readonly EntryType[]): Promise<void> {
   const home = homedir()
   const io = realIo()
   const status = (e: CatalogEntry, h: HostAdapter) => statusOf(e, h, home, io)
 
-  const screens = screenTypes(CATALOG)
+  // 本次覆盖的类型屏：按全局顺序，交 allowedTypes（缺省=全部宿主组件类型）
+  const allScreens = screenTypes(CATALOG)
+  const allowed = allowedTypes ?? allScreens.filter(ty => !isGlobalType(ty))
+  const screens = allScreens.filter(ty => allowed.includes(ty))
+  // 全局工具入口无宿主维度：跳过选宿主屏，selected 取全部宿主供 installHosts 归一。
+  // 以 allowed（而非当前有条目的 screens）判定，未收录时也不误弹选宿主屏
+  const global = allowed.length > 0 && allowed.every(isGlobalType)
+
   const picks = new Map<EntryType, string[]>() // 各类型屏离开时的选中集（回访时恢复）
   let hostIds: HostId[] | null = null // 宿主屏回访时恢复上次选择
-  let selected: HostAdapter[] = []
+  let selected: HostAdapter[] = global ? [...HOSTS] : []
   let todo: { entry: CatalogEntry, hosts: HostAdapter[] }[] = []
-  // 选择链状态机：-1 = 宿主屏，0..N-1 = 类型屏，N = 汇总确认
-  let step = -1
+  // 选择链状态机：-1 = 宿主屏，0..N-1 = 类型屏，N = 汇总确认；全局工具从 0 起
+  let step = global ? 0 : -1
 
   chain: while (true) {
     if (step < 0) {
+      // 全局工具无宿主屏，退到链头即回主菜单
+      if (global)
+        return
       // 宿主屏（链头，返回即回主菜单）：首访默认勾选探测到的宿主
       const detected = new Set(HOSTS.filter(h => hostPresent(h, home, io)).map(h => h.id))
       const preset = new Set<HostId>(hostIds ?? [...detected])
@@ -58,6 +71,22 @@ export async function runWizard(): Promise<void> {
         return
       hostIds = res.picked
       selected = res.picked.map(hostById)
+      // 缺宿主 CLI → 引导去「安装 AI Agent」（否则组件安装必失败，ADR-0008）
+      const missingCli = selected.filter(h => !hostCliInstalled(h, io))
+      if (missingCli.length > 0) {
+        console.log(pc.yellow(`\n${t('wizard.hostCliMissing', { hosts: missingCli.map(h => h.label).join(', ') })}`))
+        const jump = await singleSelect<'install' | 'skip'>({
+          message: t('wizard.confirmProceed'),
+          backLabel: t('wizard.back'),
+          help: t('prompt.singleHelp'),
+          items: [
+            { value: 'install', name: t('wizard.hostCliInstall') },
+            { value: 'skip', name: t('wizard.hostCliSkip') },
+          ],
+        })
+        if (!jump.back && jump.picked === 'install')
+          await runAgentInstall(missingCli.map(h => h.id))
+      }
       // 改宿主后：仍适用的勾选保留，不再适用的静默丢弃
       for (const [type, ids] of picks)
         picks.set(type, prunePicks(ids, CATALOG, selected))

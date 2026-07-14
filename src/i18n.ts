@@ -9,15 +9,30 @@ export type Localized = Record<Lang, string>
 /** 全部 UI 文案；en 为键的唯一来源，zh 由类型约束保证键集合一致 */
 const en = {
   'cli.menu': 'Interactive main menu (install / manage / health check)',
-  'cli.install': 'Install wizard: pick AI tools, then components, then API keys',
+  'cli.install': 'Install wizard: pick AI Agent, then components, then API keys',
   'cli.doctor': 'Check every component, fill in missing API keys',
   'cli.manage': 'View each component, install or uninstall it',
 
   'menu.title': 'oxy main menu',
-  'menu.groupComponents': 'Components',
+  'menu.groupAgent': 'AI Agent',
+  'menu.groupComponents': 'Components (into an AI Agent)',
+  'menu.groupGlobal': 'Global tools',
+  'menu.groupManage': 'Maintenance',
   'menu.groupOxy': 'oxy',
-  'menu.install': 'Install components',
-  'menu.installDesc': 'pick components, install into Claude Code / Codex',
+  'menu.agentCli': 'Install AI Agent',
+  'menu.agentCliDesc': 'install the Claude Code / Codex CLI itself',
+  'menu.install': 'Install MCP / Skills',
+  'menu.installDesc': 'pick MCP servers & skills, install into an AI Agent',
+  'menu.subAgents': 'Subagents',
+  'menu.subAgentsDesc': 'pick subagent definitions to install',
+  'menu.collections': 'Skill collections',
+  'menu.collectionsDesc': 'install a whole repo of skills at once',
+  'menu.spec': 'Spec tools',
+  'menu.specDesc': 'global spec-driven dev CLIs',
+  'menu.cli': 'CLI tools',
+  'menu.cliDesc': 'standalone global command-line tools',
+  'menu.plugin': 'AI plugins',
+  'menu.pluginDesc': 'plugins that extend your AI Agent',
   'menu.doctor': 'Health check',
   'menu.doctorDesc': 'see what is installed, fill in missing API keys',
   'menu.manage': 'Manage components',
@@ -33,7 +48,7 @@ const en = {
   'menu.pickLang': 'Select display language / 选择显示语言',
 
   'help.body': `oxy              open this menu
-oxy install      install wizard: pick AI tools, components, API keys
+oxy install      install wizard: pick AI Agent, components, API keys
 oxy manage       view each component, install or uninstall it
 oxy doctor       check every component, fill in missing API keys
 
@@ -50,16 +65,19 @@ Docs & issues: {url}`,
 
   'type.mcp': 'MCP servers',
   'type.skill': 'Skills',
+  'type.skill-collection': 'Skill collections',
   'type.agent': 'Agents (subagents)',
   'type.spec': 'Spec tools (global)',
+  'type.cli': 'CLI tools (global)',
+  'type.plugin': 'AI plugins (global)',
 
   'logic.requires': 'requires {hosts}',
   'logic.supportedHost': 'a supported host',
   'logic.installedOn': 'installed on {hosts}',
   'logic.hostsOnly': '{hosts} only',
 
-  'wizard.pickHosts': 'Install into which AI tools?',
-  'wizard.needHost': 'Pick at least one AI tool',
+  'wizard.pickHosts': 'Install into which AI Agent?',
+  'wizard.needHost': 'Pick at least one AI Agent',
   'wizard.pickType': 'Select {type} to install',
   'wizard.back': '← Back',
   'wizard.confirmList': 'About to install {n} component(s):',
@@ -70,6 +88,12 @@ Docs & issues: {url}`,
   'wizard.summary': '{n} installed',
   'wizard.summaryFailed': ', {n} failed',
   'wizard.doctorHint': 'Run `npx oxy-workflow doctor` anytime to check status or fill in missing API keys.',
+  'wizard.hostCliMissing': 'These AI Agents are not installed yet: {hosts}. Components cannot install without them.',
+  'wizard.hostCliInstall': 'Install them now',
+  'wizard.hostCliSkip': 'Skip, continue anyway',
+
+  'agent.pick': 'Install which AI Agent CLI?',
+  'agent.alreadyInstalled': 'already installed',
 
   'prompt.multiHelp': 'space to select · enter to continue · esc to go back',
   'prompt.singleHelp': 'enter to confirm · esc to go back',
@@ -103,15 +127,30 @@ export type MsgKey = keyof typeof en
 
 const zh: Record<MsgKey, string> = {
   'cli.menu': '交互主菜单（安装 / 管理 / 体检）',
-  'cli.install': '安装向导：选 AI 工具、挑组件、填 API Key',
+  'cli.install': '安装向导：选 AI Agent、挑组件、填 API Key',
   'cli.doctor': '检查所有组件，补填缺少的 API Key',
   'cli.manage': '查看单个组件，安装或卸载',
 
   'menu.title': 'oxy 主菜单',
-  'menu.groupComponents': '组件',
+  'menu.groupAgent': 'AI Agent',
+  'menu.groupComponents': '组件（装进 AI Agent）',
+  'menu.groupGlobal': '全局工具',
+  'menu.groupManage': '运维',
   'menu.groupOxy': 'oxy',
-  'menu.install': '安装组件',
-  'menu.installDesc': '挑选组件，批量安装到 Claude Code / Codex',
+  'menu.agentCli': '安装 AI Agent',
+  'menu.agentCliDesc': '安装 Claude Code / Codex 命令行本体',
+  'menu.install': '安装 MCP / 技能',
+  'menu.installDesc': '挑选 MCP 与技能，装进某个 AI Agent',
+  'menu.subAgents': '子代理',
+  'menu.subAgentsDesc': '挑选子代理定义安装',
+  'menu.collections': 'Skills 合集',
+  'menu.collectionsDesc': '把整仓技能一次性装好',
+  'menu.spec': 'Spec 工具',
+  'menu.specDesc': '全局的 spec 驱动开发命令行',
+  'menu.cli': '命令行工具',
+  'menu.cliDesc': '独立的全局命令行工具',
+  'menu.plugin': 'AI 插件',
+  'menu.pluginDesc': '扩展你的 AI Agent 的插件',
   'menu.doctor': '环境体检',
   'menu.doctorDesc': '检查哪些组件已装好，补填缺少的 API Key',
   'menu.manage': '管理组件',
@@ -127,7 +166,7 @@ const zh: Record<MsgKey, string> = {
   'menu.pickLang': 'Select display language / 选择显示语言',
 
   'help.body': `oxy              打开主菜单
-oxy install      安装向导：选 AI 工具、挑组件、填 API Key
+oxy install      安装向导：选 AI Agent、挑组件、填 API Key
 oxy manage       查看单个组件，安装或卸载
 oxy doctor       检查所有组件，补填缺少的 API Key
 
@@ -144,16 +183,19 @@ oxy doctor       检查所有组件，补填缺少的 API Key
 
   'type.mcp': 'MCP 服务器',
   'type.skill': 'Skill 技能',
+  'type.skill-collection': 'Skills 合集',
   'type.agent': 'Agent 子代理',
   'type.spec': 'Spec 工具（全局安装）',
+  'type.cli': '命令行工具（全局安装）',
+  'type.plugin': 'AI 插件（全局安装）',
 
   'logic.requires': '需要 {hosts}',
-  'logic.supportedHost': '受支持的 AI 工具',
+  'logic.supportedHost': '受支持的 AI Agent',
   'logic.installedOn': '已装于 {hosts}',
   'logic.hostsOnly': '仅 {hosts}',
 
-  'wizard.pickHosts': '安装到哪些 AI 工具？',
-  'wizard.needHost': '至少选择一个 AI 工具',
+  'wizard.pickHosts': '安装到哪些 AI Agent？',
+  'wizard.needHost': '至少选择一个 AI Agent',
   'wizard.pickType': '选择要安装的 {type}',
   'wizard.back': '← 返回上一步',
   'wizard.confirmList': '即将安装 {n} 个组件：',
@@ -164,6 +206,12 @@ oxy doctor       检查所有组件，补填缺少的 API Key
   'wizard.summary': '{n} 个安装成功',
   'wizard.summaryFailed': '，{n} 个失败',
   'wizard.doctorHint': '随时运行 `npx oxy-workflow doctor` 检查状态、补填 API Key。',
+  'wizard.hostCliMissing': '这些 AI Agent 还没安装：{hosts}。没有它们组件装不进去。',
+  'wizard.hostCliInstall': '现在去安装',
+  'wizard.hostCliSkip': '跳过，仍然继续',
+
+  'agent.pick': '安装哪些 AI Agent CLI？',
+  'agent.alreadyInstalled': '已安装',
 
   'prompt.multiHelp': '空格勾选 · 回车下一步 · Esc 返回',
   'prompt.singleHelp': '回车确认 · Esc 返回',

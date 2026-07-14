@@ -3,6 +3,7 @@ import type { Io } from './io.js'
 import { homedir } from 'node:os'
 import { select, Separator } from '@inquirer/prompts'
 import pc from 'picocolors'
+import { runAgentInstall } from './agent-install.js'
 import { runDoctor } from './doctor.js'
 import { getLang, savedLang, saveLang, setLang, t } from './i18n.js'
 import { realIo } from './io.js'
@@ -21,7 +22,10 @@ const LOGO = `
  ╚██████╔╝██╔╝ ██╗   ██║
   ╚═════╝ ╚═╝  ╚═╝   ╚═╝`
 
-type MenuAction = 'install' | 'manage' | 'doctor' | 'update' | 'lang' | 'help' | 'quit'
+type MenuAction =
+  | 'agentCli' | 'install' | 'subAgents' | 'collections'
+  | 'spec' | 'cli' | 'plugin'
+  | 'manage' | 'doctor' | 'update' | 'lang' | 'help' | 'quit'
 
 /** 主菜单循环：横幅 → 选择 → 执行 → 回菜单，Q 退出（CCG/ZCF 式壳） */
 export async function runMenu(version: string): Promise<void> {
@@ -41,12 +45,30 @@ export async function runMenu(version: string): Promise<void> {
     const action = await select<MenuAction>({
       message: t('menu.title'),
       choices: menuChoices(),
-      pageSize: 14,
+      pageSize: 24,
       loop: false,
     })
     switch (action) {
+      case 'agentCli':
+        await runAgentInstall()
+        break
       case 'install':
-        await runWizard()
+        await runWizard(['mcp', 'skill'])
+        break
+      case 'subAgents':
+        await runWizard(['agent'])
+        break
+      case 'collections':
+        await runWizard(['skill-collection'])
+        break
+      case 'spec':
+        await runWizard(['spec'])
+        break
+      case 'cli':
+        await runWizard(['cli'])
+        break
+      case 'plugin':
+        await runWizard(['plugin'])
         break
       case 'manage':
         await runManage()
@@ -79,10 +101,22 @@ function menuChoices(): (Separator | { value: MenuAction, name: string })[] {
   const blank = () => new Separator(' ')
   return [
     blank(),
+    rule(t('menu.groupAgent')),
+    row('agentCli', '1.', t('menu.agentCli'), t('menu.agentCliDesc')),
+    blank(),
     rule(t('menu.groupComponents')),
-    row('install', '1.', t('menu.install'), t('menu.installDesc')),
-    row('manage', '2.', t('menu.manage'), t('menu.manageDesc')),
-    row('doctor', '3.', t('menu.doctor'), t('menu.doctorDesc')),
+    row('install', '2.', t('menu.install'), t('menu.installDesc')),
+    row('subAgents', '3.', t('menu.subAgents'), t('menu.subAgentsDesc')),
+    row('collections', '4.', t('menu.collections'), t('menu.collectionsDesc')),
+    blank(),
+    rule(t('menu.groupGlobal')),
+    row('spec', '5.', t('menu.spec'), t('menu.specDesc')),
+    row('cli', '6.', t('menu.cli'), t('menu.cliDesc')),
+    row('plugin', '7.', t('menu.plugin'), t('menu.pluginDesc')),
+    blank(),
+    rule(t('menu.groupManage')),
+    row('manage', '8.', t('menu.manage'), t('menu.manageDesc')),
+    row('doctor', '9.', t('menu.doctor'), t('menu.doctorDesc')),
     blank(),
     rule(t('menu.groupOxy')),
     row('update', 'U.', t('menu.update'), t('menu.updateDesc')),

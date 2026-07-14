@@ -135,6 +135,115 @@ describe('installEntry', () => {
     expect(r.detail).toMatch(/manual/i)
   })
 
+  it('cli：与 spec 同走 shell，按空格拆分执行', async () => {
+    const cli: CatalogEntry = {
+      id: 'auggie',
+      type: 'cli',
+      name: '',
+      summary: { en: '', zh: '' },
+      homepage: 'https://x',
+      install: { method: 'shell', command: 'npm install -g @augmentcode/auggie', binary: 'auggie' },
+    }
+    const { io, calls } = fakeIo()
+    await installEntry(cli, claude, HOME, {}, io)
+    expect(calls.exec).toEqual([['npm', 'install', '-g', '@augmentcode/auggie']])
+  })
+
+  it('mcp：声明 prerequisite 时先跑前置命令再 add', async () => {
+    const withPre: CatalogEntry = {
+      ...mcp,
+      install: { method: 'mcp-config', server: { command: 'cmm' }, prerequisite: 'cargo install codebase-memory-mcp' },
+    }
+    const { io, calls } = fakeIo()
+    await installEntry(withPre, claude, HOME, {}, io)
+    expect(calls.exec).toEqual([
+      ['cargo', 'install', 'codebase-memory-mcp'],
+      claude.mcp.addCommand('context7', { command: 'cmm' }, {}),
+    ])
+  })
+
+  it('plugin：跑官方安装命令', async () => {
+    const plugin: CatalogEntry = {
+      id: 'claude-mem',
+      type: 'plugin',
+      name: '',
+      summary: { en: '', zh: '' },
+      homepage: 'https://x',
+      install: { method: 'plugin', command: 'npx claude-mem install', marker: 'plugins/claude-mem' },
+    }
+    const { io, calls } = fakeIo()
+    const r = await installEntry(plugin, claude, HOME, {}, io)
+    expect(r.ok).toBe(true)
+    expect(calls.exec).toEqual([['npx', 'claude-mem', 'install']])
+  })
+
+  it('skill-collection：抓整仓、每个子技能摊平到 skills 顶层', async () => {
+    const coll: CatalogEntry = {
+      id: 'mp-skills',
+      type: 'skill-collection',
+      name: '',
+      summary: { en: '', zh: '' },
+      homepage: 'https://x',
+      install: { method: 'fetch-collection', repo: 'mattpocock/skills', source: 'skills', sentinel: 'a' },
+    }
+    const { io, calls } = fakeIo({
+      fetchSource: async (repo, source, kind) => {
+        expect([repo, source, kind]).toEqual(['mattpocock/skills', 'skills', 'dir'])
+        return {
+          'a/SKILL.md': new TextEncoder().encode('a'),
+          'b/SKILL.md': new TextEncoder().encode('b'),
+          'b/ref.md': new TextEncoder().encode('r'),
+        }
+      },
+    })
+    const r = await installEntry(coll, claude, HOME, {}, io)
+    expect(r.ok).toBe(true)
+    expect(Object.keys(calls.writes).sort()).toEqual([
+      join(claude.skillsDir(HOME), 'a', 'SKILL.md'),
+      join(claude.skillsDir(HOME), 'b', 'SKILL.md'),
+      join(claude.skillsDir(HOME), 'b', 'ref.md'),
+    ].sort())
+  })
+
+  it('卸载 plugin：有 uninstall 跑命令，无则删 marker（相对 host root）', async () => {
+    const removed: string[] = []
+    const { io, calls } = fakeIo({ remove: async p => void removed.push(p) })
+    const base = { id: 'p', type: 'plugin' as const, name: '', summary: { en: '', zh: '' }, homepage: 'https://x' }
+
+    const withCmd: CatalogEntry = { ...base, install: { method: 'plugin', command: 'x', marker: 'm', uninstall: 'npx claude-mem uninstall' } }
+    expect((await uninstallEntry(withCmd, claude, HOME, io)).ok).toBe(true)
+    expect(calls.exec).toEqual([['npx', 'claude-mem', 'uninstall']])
+
+    const noCmd: CatalogEntry = { ...base, install: { method: 'plugin', command: 'x', marker: 'skills/ccg' } }
+    expect((await uninstallEntry(noCmd, claude, HOME, io)).ok).toBe(true)
+    expect(removed).toEqual([join(claude.root(HOME), 'skills', 'ccg')])
+  })
+
+  it('卸载 skill-collection：重列仓库树，逐个删顶层子技能目录', async () => {
+    const removed: string[] = []
+    const { io } = fakeIo({
+      fetchSource: async () => ({
+        'a/SKILL.md': new TextEncoder().encode(''),
+        'b/SKILL.md': new TextEncoder().encode(''),
+        'b/ref.md': new TextEncoder().encode(''),
+      }),
+      remove: async p => void removed.push(p),
+    })
+    const coll: CatalogEntry = {
+      id: 'mp-skills',
+      type: 'skill-collection',
+      name: '',
+      summary: { en: '', zh: '' },
+      homepage: 'https://x',
+      install: { method: 'fetch-collection', repo: 'o/r', source: 'skills', sentinel: 'a' },
+    }
+    expect((await uninstallEntry(coll, claude, HOME, io)).ok).toBe(true)
+    expect(removed.sort()).toEqual([
+      join(claude.skillsDir(HOME), 'a'),
+      join(claude.skillsDir(HOME), 'b'),
+    ].sort())
+  })
+
   it('任何 IO 失败都收敛为 ok:false，绝不抛出（失败跳过 + 汇总）', async () => {
     const { io } = fakeIo({ fetchSource: async () => { throw new Error('network down') } })
     const skill: CatalogEntry = {

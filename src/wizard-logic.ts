@@ -3,7 +3,7 @@ import type { HostAdapter } from './hosts/types.js'
 import type { Status } from './probe.js'
 import { hostById } from './hosts/index.js'
 import { t } from './i18n.js'
-import { TYPE_ORDER } from './ui.js'
+import { isGlobalType, TYPE_ORDER } from './ui.js'
 
 /** 探测查询函数：向导把真实 IO 探测柯里化后传入，纯逻辑可测 */
 export type StatusLookup = (entry: CatalogEntry, host: HostAdapter) => Status
@@ -23,9 +23,11 @@ export function screenTypes(catalog: CatalogEntry[]): EntryType[] {
   return TYPE_ORDER.filter(type => catalog.some(e => e.type === type))
 }
 
-/** 条目是否适用于某宿主（spec 全局恒真；agent 还要求宿主有 subagent 概念） */
+/** 条目是否适用于某宿主（spec/cli 全局恒真；plugin 按声明宿主；
+ * agent 还要求宿主有 subagent 概念） */
 export function supportsHost(entry: CatalogEntry, host: HostAdapter): boolean {
-  if (entry.type === 'spec')
+  // spec/cli 与宿主无关；plugin 虽属全局工具，但内容落特定宿主，仍按声明宿主
+  if (entry.type === 'spec' || entry.type === 'cli')
     return true
   // agentsDir 是 home 的纯函数：传空串即可判断该宿主有无 subagent 概念（null = 无）
   if (entry.type === 'agent' && host.agentsDir('') === null)
@@ -49,8 +51,8 @@ function applicableHosts(entry: CatalogEntry, selected: HostAdapter[]): HostAdap
 /** 真正要执行安装的宿主：适用 ∧ 未装（missing-env 视为已装，补配走 doctor） */
 export function installHosts(entry: CatalogEntry, selected: HostAdapter[], status: StatusLookup): HostAdapter[] {
   const applicable = applicableHosts(entry, selected)
-  if (entry.type === 'spec') {
-    // 全局安装：任一宿主视角 missing 才装，且只装一次
+  if (isGlobalType(entry.type)) {
+    // 全局工具：任一（适用）宿主视角 missing 才装，且只装一次
     const missing = applicable.some(h => status(entry, h) === 'missing')
     return missing ? applicable.slice(0, 1) : []
   }

@@ -2,6 +2,7 @@ import type { CatalogEntry } from './catalog/types.js'
 import type { HostAdapter } from './hosts/types.js'
 import type { Status } from './probe.js'
 import type { StatusLookup } from './wizard-logic.js'
+import { isGlobalType } from './ui.js'
 import { supportsHost } from './wizard-logic.js'
 
 /** 宿主存在性查询：管理流把真实探测柯里化后传入，纯逻辑可测 */
@@ -16,7 +17,7 @@ export interface HostState {
 
 /**
  * 条目在各适用宿主上的实时状态，顺序与宿主注册表一致。
- * spec 与宿主无关，归一为首个宿主视角的单条全局状态。
+ * 全局工具（spec/cli/plugin）与宿主无关，归一为首个适用宿主视角的单条全局状态。
  */
 export function hostStates(
   entry: CatalogEntry,
@@ -25,7 +26,7 @@ export function hostStates(
   present: PresenceLookup,
 ): HostState[] {
   const applicable = hosts.filter(h => supportsHost(entry, h))
-  const targets = entry.type === 'spec' ? applicable.slice(0, 1) : applicable
+  const targets = isGlobalType(entry.type) ? applicable.slice(0, 1) : applicable
   return targets.map(host => ({ host, status: status(entry, host), detected: present(host) }))
 }
 

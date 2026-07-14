@@ -5,6 +5,8 @@ import { join } from 'node:path'
 export const claude: HostAdapter = {
   id: 'claude',
   label: 'Claude Code',
+  installCommand: 'npm install -g @anthropic-ai/claude-code',
+  binary: 'claude',
   root: home => join(home, '.claude'),
   skillsDir: home => join(home, '.claude', 'skills'),
   agentsDir: home => join(home, '.claude', 'agents'),

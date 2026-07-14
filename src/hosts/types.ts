@@ -12,6 +12,10 @@ export interface InstalledMcp {
 export interface HostAdapter {
   id: HostId
   label: string
+  /** 宿主 CLI 引导安装命令（官方跨平台方式，ADR-0008「安装 AI Agent」入口） */
+  installCommand: string
+  /** 宿主 CLI 的 PATH 二进制名——引导安装成功判定与"缺宿主→跳转"的触发依据 */
+  binary: string
   /** 宿主存在性探测目录 */
   root: (home: string) => string
   skillsDir: (home: string) => string

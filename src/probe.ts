@@ -16,6 +16,11 @@ export function hostPresent(host: HostAdapter, home: string, io: ProbeIo): boole
   return io.exists(host.root(home))
 }
 
+/** 宿主 CLI 是否已装（PATH binary）——「安装 AI Agent」引导与"缺宿主→跳转"依据 */
+export function hostCliInstalled(host: HostAdapter, io: ProbeIo): boolean {
+  return io.hasBinary(host.binary)
+}
+
 /** 单条目 × 单宿主实时探测——doctor 与卸载的唯一状态来源（ADR-0004） */
 export function statusOf(entry: CatalogEntry, host: HostAdapter, home: string, io: ProbeIo): Status {
   const { install } = entry
@@ -32,8 +37,14 @@ export function statusOf(entry: CatalogEntry, host: HostAdapter, home: string, i
         : join(host.skillsDir(home), entry.id, 'SKILL.md')
       return target && io.exists(target) ? 'installed' : 'missing'
     }
+    case 'fetch-collection':
+      // 无 manifest：查哨兵子技能的 SKILL.md（ADR-0004/0009）
+      return io.exists(join(host.skillsDir(home), install.sentinel, 'SKILL.md')) ? 'installed' : 'missing'
     case 'shell':
       return io.hasBinary(install.binary) ? 'installed' : 'missing'
+    case 'plugin':
+      // 探宿主内标记路径，非 PATH binary
+      return io.exists(join(host.root(home), ...install.marker.split('/'))) ? 'installed' : 'missing'
   }
 }
 
