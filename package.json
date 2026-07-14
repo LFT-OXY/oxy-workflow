@@ -1,7 +1,7 @@
 {
   "name": "oxy-workflow",
-  "version": "0.3.1",
-  "description": "Curated installer for AI toolchain components (MCP servers, skills, agents, spec tools) into Claude Code and Codex",
+  "version": "0.4.0",
+  "description": "Curated installer for AI toolchain components (MCP servers, skills, skill collections, subagents, spec/CLI tools, plugins) into Claude Code and Codex",
   "type": "module",
   "license": "MIT",
   "repository": {
