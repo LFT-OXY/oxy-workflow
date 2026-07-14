@@ -33,6 +33,20 @@ describe('fetchSource：从官方 repo 抓取组件内容', () => {
     expect(new TextDecoder().decode(files['SKILL.md'])).toBe('skill body')
   })
 
+  it("目录 source='.'：仓库根即整包 skill，取全部 blob，键为完整路径", async () => {
+    const fetchFn = fakeGithub(
+      [
+        { path: 'SKILL.md', type: 'blob' },
+        { path: 'scripts/run.sh', type: 'blob' },
+        { path: 'skills', type: 'tree' },
+      ],
+      { 'SKILL.md': 'root skill', 'scripts/run.sh': 'script' },
+    )
+    const files = await fetchSource('o/r', '.', 'dir', undefined, fetchFn)
+    expect(Object.keys(files).sort()).toEqual(['SKILL.md', 'scripts/run.sh'])
+    expect(new TextDecoder().decode(files['SKILL.md'])).toBe('root skill')
+  })
+
   it('kind=file：直接抓 raw，键为文件名（语义由调用方按类型指定，不猜扩展名）', async () => {
     const fetchFn = fakeGithub([], { 'agents/code-refactorer.md': 'agent body' })
     const files = await fetchSource('o/r', 'agents/code-refactorer.md', 'file', undefined, fetchFn)

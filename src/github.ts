@@ -28,7 +28,8 @@ export async function fetchSource(
   if (!res.ok)
     throw new Error(`GitHub tree API ${res.status} for ${repo}`)
   const { tree } = await res.json() as { tree: { path: string, type: string }[] }
-  const prefix = `${source}/`
+  // source '.' / '' = 仓库根整包（SKILL.md 就在根，如 web-access）：前缀空、取全部 blob
+  const prefix = source === '.' || source === '' ? '' : `${source}/`
   const blobs = tree.filter(n => n.type === 'blob' && n.path.startsWith(prefix))
   if (blobs.length === 0)
     throw new Error(`no files under ${source} in ${repo}`)

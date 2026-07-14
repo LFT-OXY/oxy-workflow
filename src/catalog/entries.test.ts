@@ -32,6 +32,15 @@ describe('目录不变量（schema 规则）', () => {
       expect(e.install.method, e.id).toBe(expected[e.type])
   })
 
+  it('fetch-collection 有非空 sentinel，plugin 有非空 marker（探测依赖）', () => {
+    for (const e of CATALOG) {
+      if (e.install.method === 'fetch-collection')
+        expect(e.install.sentinel.length, e.id).toBeGreaterThan(0)
+      if (e.install.method === 'plugin')
+        expect(e.install.marker.length, e.id).toBeGreaterThan(0)
+    }
+  })
+
   it('agent 的 source 是单个 .md 文件，skill 的 source 是目录', () => {
     for (const e of CATALOG) {
       if (e.install.method !== 'fetch-files')
