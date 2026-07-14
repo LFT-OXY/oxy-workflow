@@ -11,8 +11,9 @@ import { localize, t } from './i18n.js'
 import { installEntry, uninstallEntry } from './install.js'
 import { realIo } from './io.js'
 import { entryActions, hostStates } from './manage-logic.js'
+import { isGlobalType, TYPE_ORDER } from './catalog/types.js'
 import { hostPresent, statusOf } from './probe.js'
-import { isGlobalType, promptEnv, statusLabel, TYPE_ORDER, typeTitle } from './ui.js'
+import { promptEnv, statusLabel, typeTitle } from './ui.js'
 
 /** 返回伪选项的哨兵值；目录条目 id 不使用双下划线前缀，不会冲突 */
 const BACK = '__back__'

@@ -8,8 +8,9 @@ import { HOSTS } from './hosts/index.js'
 import { t } from './i18n.js'
 import { installEntry } from './install.js'
 import { realIo } from './io.js'
+import { isGlobalType } from './catalog/types.js'
 import { hostPresent, installedMcp, missingEnvKeys, statusOf } from './probe.js'
-import { isGlobalType, statusLabel } from './ui.js'
+import { statusLabel } from './ui.js'
 import { supportsHost } from './wizard-logic.js'
 
 /** 全量探测报告 + 缺失 env 补配（PRD 验收 5；无状态，ADR-0004） */

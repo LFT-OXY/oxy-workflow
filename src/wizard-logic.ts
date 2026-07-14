@@ -1,9 +1,9 @@
 import type { CatalogEntry, EntryType } from './catalog/types.js'
 import type { HostAdapter } from './hosts/types.js'
 import type { Status } from './probe.js'
+import { isGlobalType, TYPE_ORDER } from './catalog/types.js'
 import { hostById } from './hosts/index.js'
 import { t } from './i18n.js'
-import { isGlobalType, TYPE_ORDER } from './ui.js'
 
 /** 探测查询函数：向导把真实 IO 探测柯里化后传入，纯逻辑可测 */
 export type StatusLookup = (entry: CatalogEntry, host: HostAdapter) => Status

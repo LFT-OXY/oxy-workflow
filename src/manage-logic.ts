@@ -2,7 +2,7 @@ import type { CatalogEntry } from './catalog/types.js'
 import type { HostAdapter } from './hosts/types.js'
 import type { Status } from './probe.js'
 import type { StatusLookup } from './wizard-logic.js'
-import { isGlobalType } from './ui.js'
+import { isGlobalType } from './catalog/types.js'
 import { supportsHost } from './wizard-logic.js'
 
 /** 宿主存在性查询：管理流把真实探测柯里化后传入，纯逻辑可测 */

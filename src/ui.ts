@@ -16,16 +16,6 @@ export function statusLabel(status: Status): string {
   }
 }
 
-export const TYPE_ORDER = ['skill', 'skill-collection', 'mcp', 'agent', 'spec', 'cli', 'plugin'] as const
-
-/** 全局工具类型：无宿主维度，跑官方命令装、只装一次（ADR-0009） */
-const GLOBAL_TYPES = new Set<EntryType>(['spec', 'cli', 'plugin'])
-
-/** 是否全局工具（决定向导跳过选宿主屏、装一次、UI 显示 global） */
-export function isGlobalType(type: EntryType): boolean {
-  return GLOBAL_TYPES.has(type)
-}
-
 /** 类型分组标题；随当前显示语言运行时求值，不能做常量表 */
 export function typeTitle(type: EntryType): string {
   return t(`type.${type}`)

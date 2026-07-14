@@ -6,6 +6,18 @@ export type HostId = 'claude' | 'codex'
 /** 组件类型（可扩展枚举） */
 export type EntryType = 'mcp' | 'skill' | 'skill-collection' | 'agent' | 'spec' | 'cli' | 'plugin'
 
+/** 组件类型的全局展示顺序（向导分屏与管理分组共用） */
+export const TYPE_ORDER = ['skill', 'skill-collection', 'mcp', 'agent', 'spec', 'cli', 'plugin'] as const
+
+/** 全局工具类型：无宿主维度，跑官方命令装、只装一次（ADR-0009） */
+const GLOBAL_TYPES = new Set<EntryType>(['spec', 'cli', 'plugin'])
+
+/** 是否全局工具（决定向导跳过选宿主屏、装一次、UI 显示 global）。
+ * 放在纯类型模块，避免逻辑层经 ui.ts 牵入交互式 IO（关注点分离） */
+export function isGlobalType(type: EntryType): boolean {
+  return GLOBAL_TYPES.has(type)
+}
+
 /** 条目声明的环境变量需求；值由向导收集，目录中永不存储密钥值 */
 export interface EnvVar {
   key: string

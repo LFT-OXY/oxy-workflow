@@ -10,13 +10,36 @@ import { realIo } from './io.js'
 import type { MultiResult } from './list-prompt.js'
 import { localize, t } from './i18n.js'
 import { multiSelect, singleSelect } from './list-prompt.js'
-import { hostCliInstalled, hostPresent, statusOf } from './probe.js'
-import { isGlobalType, promptEnv, typeTitle } from './ui.js'
+import { isGlobalType } from './catalog/types.js'
+import { hostCliInstalled, hostPresent, type ProbeIo, statusOf } from './probe.js'
+import { promptEnv, typeTitle } from './ui.js'
 import { buildChoices, installHosts, prunePicks, screenTypes } from './wizard-logic.js'
 
 /** 条目的安装去向展示口径（全局工具与宿主无关，显示 global） */
 function targetLabel(entry: CatalogEntry, hosts: HostAdapter[]): string {
   return isGlobalType(entry.type) ? 'global' : hosts.map(h => h.id).join(', ')
+}
+
+/**
+ * 缺宿主 CLI → 引导去「安装 AI Agent」（否则装进宿主的组件必失败，ADR-0008）。
+ * 选宿主屏与执行前的插件落点两处共用（宿主组件在选宿主屏拦，全局流的插件在此拦）。
+ */
+async function bootstrapIfMissing(hosts: HostAdapter[], io: ProbeIo): Promise<void> {
+  const missing = hosts.filter(h => !hostCliInstalled(h, io))
+  if (missing.length === 0)
+    return
+  console.log(pc.yellow(`\n${t('wizard.hostCliMissing', { hosts: missing.map(h => h.label).join(', ') })}`))
+  const jump = await singleSelect<'install' | 'skip'>({
+    message: t('wizard.confirmProceed'),
+    backLabel: t('wizard.back'),
+    help: t('prompt.singleHelp'),
+    items: [
+      { value: 'install', name: t('wizard.hostCliInstall') },
+      { value: 'skip', name: t('wizard.hostCliSkip') },
+    ],
+  })
+  if (!jump.back && jump.picked === 'install')
+    await runAgentInstall(missing.map(h => h.id))
 }
 
 /**
@@ -71,22 +94,7 @@ export async function runWizard(allowedTypes?: readonly EntryType[]): Promise<vo
         return
       hostIds = res.picked
       selected = res.picked.map(hostById)
-      // 缺宿主 CLI → 引导去「安装 AI Agent」（否则组件安装必失败，ADR-0008）
-      const missingCli = selected.filter(h => !hostCliInstalled(h, io))
-      if (missingCli.length > 0) {
-        console.log(pc.yellow(`\n${t('wizard.hostCliMissing', { hosts: missingCli.map(h => h.label).join(', ') })}`))
-        const jump = await singleSelect<'install' | 'skip'>({
-          message: t('wizard.confirmProceed'),
-          backLabel: t('wizard.back'),
-          help: t('prompt.singleHelp'),
-          items: [
-            { value: 'install', name: t('wizard.hostCliInstall') },
-            { value: 'skip', name: t('wizard.hostCliSkip') },
-          ],
-        })
-        if (!jump.back && jump.picked === 'install')
-          await runAgentInstall(missingCli.map(h => h.id))
-      }
+      await bootstrapIfMissing(selected, io)
       // 改宿主后：仍适用的勾选保留，不再适用的静默丢弃
       for (const [type, ids] of picks)
         picks.set(type, prunePicks(ids, CATALOG, selected))
@@ -150,6 +158,13 @@ export async function runWizard(allowedTypes?: readonly EntryType[]): Promise<vo
       todo = plans.filter(p => p.hosts.length > 0)
       break chain
     }
+  }
+
+  // 全局流跳过了选宿主屏，但 plugin 仍落进宿主：缺宿主 CLI 同样引导（ADR-0008）。
+  // shell 类（spec/cli）无宿主，install.method 过滤掉即可。
+  if (global) {
+    const pluginHosts = [...new Set(todo.filter(p => p.entry.install.method !== 'shell').flatMap(p => p.hosts))]
+    await bootstrapIfMissing(pluginHosts, io)
   }
 
   // env 引导（可跳过；跳过的必需项由 doctor 补配）
