@@ -132,7 +132,10 @@ const listPrompt = createPrompt<{ back: boolean, picked: unknown[] }, InternalCo
   const backActive = cursor === -1
   const backRow = backActive ? pc.cyan(`${figures.pointer} ${config.backLabel}`) : `  ${pc.dim(config.backLabel)}`
   const lines = [
-    `${prefix} ${pc.bold(config.message)}`,
+    // 顶部空行拉开与历史输出的距离；标题反白高亮条，终端无字号可调，
+    // 以最强视觉权重标识当前屏（样式经用户拍板）
+    '',
+    ` ${pc.inverse(pc.bold(` ${config.message} `))}`,
     '',
     backRow,
     ` ${pc.dim('─'.repeat(10))}`,
