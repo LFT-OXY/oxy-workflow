@@ -45,4 +45,17 @@ describe('目录不变量（schema 规则）', () => {
         expect(v.key, e.id).toMatch(/^[A-Z][A-Z0-9_]*$/)
     }
   })
+
+  it('summary 与 env hint 双语齐全且非空', () => {
+    for (const e of CATALOG) {
+      expect(e.summary.en.length, e.id).toBeGreaterThan(0)
+      expect(e.summary.zh.length, e.id).toBeGreaterThan(0)
+      for (const v of e.env ?? []) {
+        if (v.hint) {
+          expect(v.hint.en.length, `${e.id}.${v.key}`).toBeGreaterThan(0)
+          expect(v.hint.zh.length, `${e.id}.${v.key}`).toBeGreaterThan(0)
+        }
+      }
+    }
+  })
 })

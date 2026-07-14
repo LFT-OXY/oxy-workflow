@@ -1,3 +1,5 @@
+import type { Localized } from '../i18n.js'
+
 /** 宿主标识——组件被安装进的目标 AI CLI 环境（ADR-0005） */
 export type HostId = 'claude' | 'codex'
 
@@ -8,7 +10,7 @@ export type EntryType = 'mcp' | 'skill' | 'agent' | 'spec'
 export interface EnvVar {
   key: string
   required: boolean
-  hint?: string
+  hint?: Localized
 }
 
 /** MCP 服务器定义，由宿主适配器渲染成各自官方 CLI 的参数 */
@@ -40,7 +42,7 @@ export interface CatalogEntry {
   id: string
   type: EntryType
   name: string
-  summary: string
+  summary: Localized
   homepage: string
   /** 维护者推荐集标记，向导默认勾选 */
   recommended?: boolean

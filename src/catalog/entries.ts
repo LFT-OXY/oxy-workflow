@@ -6,7 +6,10 @@ export const CATALOG: CatalogEntry[] = [
     id: 'context7',
     type: 'mcp',
     name: 'Context7',
-    summary: 'Up-to-date library docs for AI coding agents',
+    summary: {
+      en: 'Up-to-date library docs for AI coding agents',
+      zh: '为 AI 编程助手提供最新的库文档',
+    },
     homepage: 'https://github.com/upstash/context7',
     recommended: true,
     install: {
@@ -16,14 +19,20 @@ export const CATALOG: CatalogEntry[] = [
     env: [{
       key: 'CONTEXT7_API_KEY',
       required: false,
-      hint: 'Optional, free at context7.com/dashboard (higher rate limits)',
+      hint: {
+        en: 'Optional, free at context7.com/dashboard (higher rate limits)',
+        zh: '可选，在 context7.com/dashboard 免费获取（更高调用限额）',
+      },
     }],
   },
   {
     id: 'skill-creator',
     type: 'skill',
     name: 'Skill Creator',
-    summary: 'Official Anthropic skill for authoring new skills',
+    summary: {
+      en: 'Official Anthropic skill for authoring new skills',
+      zh: 'Anthropic 官方技能，用来编写新的技能',
+    },
     homepage: 'https://github.com/anthropics/skills',
     recommended: true,
     install: {
@@ -36,7 +45,10 @@ export const CATALOG: CatalogEntry[] = [
     id: 'oxy-summary',
     type: 'skill',
     name: 'Oxy Summary',
-    summary: 'Teaching-style deep-dive notes from links, docs, and code',
+    summary: {
+      en: 'Teaching-style deep-dive notes from links, docs, and code',
+      zh: '把链接、文档、代码深度解析成教学式笔记',
+    },
     homepage: 'https://github.com/LFT-OXY/skills',
     recommended: true,
     install: {
@@ -49,7 +61,10 @@ export const CATALOG: CatalogEntry[] = [
     id: 'code-refactorer',
     type: 'agent',
     name: 'Code Refactorer',
-    summary: 'Subagent focused on safe, behavior-preserving refactoring',
+    summary: {
+      en: 'Subagent focused on safe, behavior-preserving refactoring',
+      zh: '专注安全重构的子代理，不改变现有行为',
+    },
     homepage: 'https://github.com/iannuttall/claude-agents',
     hosts: ['claude'],
     install: {
@@ -62,7 +77,10 @@ export const CATALOG: CatalogEntry[] = [
     id: 'openspec',
     type: 'spec',
     name: 'OpenSpec',
-    summary: 'Spec-driven development workflow CLI',
+    summary: {
+      en: 'Spec-driven development workflow CLI',
+      zh: '规范驱动开发（Spec-driven）的工作流命令行工具',
+    },
     homepage: 'https://github.com/Fission-AI/OpenSpec',
     install: {
       method: 'shell',

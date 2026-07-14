@@ -30,7 +30,7 @@ const mcp: CatalogEntry = {
   id: 'context7',
   type: 'mcp',
   name: '',
-  summary: '',
+  summary: { en: '', zh: '' },
   homepage: 'https://x',
   install: { method: 'mcp-config', server: { command: 'npx', args: ['-y', 'pkg'] } },
 }
@@ -48,7 +48,7 @@ describe('installEntry', () => {
       id: 'skill-creator',
       type: 'skill',
       name: '',
-      summary: '',
+      summary: { en: '', zh: '' },
       homepage: 'https://x',
       install: { method: 'fetch-files', repo: 'anthropics/skills', source: 'skills/skill-creator' },
     }
@@ -74,7 +74,7 @@ describe('installEntry', () => {
       id: 'code-refactorer',
       type: 'agent',
       name: '',
-      summary: '',
+      summary: { en: '', zh: '' },
       homepage: 'https://x',
       hosts: ['claude'],
       install: { method: 'fetch-files', repo: 'iannuttall/claude-agents', source: 'agents/code-refactorer.md' },
@@ -95,7 +95,7 @@ describe('installEntry', () => {
       id: 'openspec',
       type: 'spec',
       name: '',
-      summary: '',
+      summary: { en: '', zh: '' },
       homepage: 'https://x',
       install: { method: 'shell', command: 'npm install -g @fission-ai/openspec', binary: 'openspec' },
     }
@@ -115,7 +115,7 @@ describe('installEntry', () => {
       id: 'skill-creator',
       type: 'skill',
       name: '',
-      summary: '',
+      summary: { en: '', zh: '' },
       homepage: 'https://x',
       install: { method: 'fetch-files', repo: 'o/r', source: 'skills/skill-creator' },
     }
@@ -126,7 +126,7 @@ describe('installEntry', () => {
       id: 'openspec',
       type: 'spec',
       name: '',
-      summary: '',
+      summary: { en: '', zh: '' },
       homepage: 'https://x',
       install: { method: 'shell', command: 'npm i -g x', binary: 'openspec' },
     }
@@ -141,7 +141,7 @@ describe('installEntry', () => {
       id: 's',
       type: 'skill',
       name: '',
-      summary: '',
+      summary: { en: '', zh: '' },
       homepage: 'https://x',
       install: { method: 'fetch-files', repo: 'o/r', source: 'skills/s' },
     }

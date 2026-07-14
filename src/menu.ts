@@ -41,7 +41,7 @@ export async function runMenu(version: string): Promise<void> {
     const action = await select<MenuAction>({
       message: t('menu.title'),
       choices: menuChoices(),
-      pageSize: 12,
+      pageSize: 14,
       loop: false,
     })
     switch (action) {
@@ -75,11 +75,15 @@ function menuChoices(): (Separator | { value: MenuAction, name: string })[] {
   const row = (value: MenuAction, no: string, label: string, desc = '') =>
     ({ value, name: `${no} ${label}${desc ? ` ${pc.dim(`- ${desc}`)}` : ''}` })
   const rule = (title: string) => new Separator(pc.dim(`──────── ${title} ────────`))
+  // 分组标题前空一行（间距规范），Separator 不可选中不影响导航
+  const blank = () => new Separator(' ')
   return [
+    blank(),
     rule(t('menu.groupComponents')),
     row('install', '1.', t('menu.install'), t('menu.installDesc')),
     row('manage', '2.', t('menu.manage'), t('menu.manageDesc')),
     row('doctor', '3.', t('menu.doctor'), t('menu.doctorDesc')),
+    blank(),
     rule(t('menu.groupOxy')),
     row('update', 'U.', t('menu.update'), t('menu.updateDesc')),
     row('lang', '0.', t('menu.lang'), t('menu.langDesc')),

@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { detectLang, MESSAGES, prefsPath, savedLang, saveLang, setLang, t } from './i18n.js'
+import { detectLang, localize, MESSAGES, prefsPath, savedLang, saveLang, setLang, t } from './i18n.js'
 
 // t() 依赖模块级语言状态，每例结束还原默认 en，避免用例间串扰
 afterEach(() => setLang('en'))
@@ -26,6 +26,15 @@ describe('t：取文案与插值', () => {
   it('多占位与数字参数', () => {
     expect(t('update.newVersion', { latest: '0.2.0', current: '0.1.0' })).toContain('v0.2.0')
     expect(t('wizard.summary', { n: 3 })).toBe('3 installed')
+  })
+})
+
+describe('localize：双语对象按当前语言取值', () => {
+  it('en/zh 各取各的', () => {
+    const text = { en: 'hello', zh: '你好' }
+    expect(localize(text)).toBe('hello')
+    setLang('zh')
+    expect(localize(text)).toBe('你好')
   })
 })
 

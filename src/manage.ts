@@ -7,7 +7,7 @@ import { confirm, select, Separator } from '@inquirer/prompts'
 import pc from 'picocolors'
 import { CATALOG } from './catalog/entries.js'
 import { HOSTS } from './hosts/index.js'
-import { t } from './i18n.js'
+import { localize, t } from './i18n.js'
 import { installEntry, uninstallEntry } from './install.js'
 import { realIo } from './io.js'
 import { entryActions, hostStates } from './manage-logic.js'
@@ -43,7 +43,7 @@ export async function runManage(): Promise<void> {
 /** 列表屏选项：按全局类型顺序分组，行尾带各宿主实时状态徽标 */
 function listChoices(status: StatusLookup, present: PresenceLookup): (Separator | { value: string, name: string })[] {
   const rows: (Separator | { value: string, name: string })[] = [
-    { value: BACK, name: pc.dim(t('manage.backToMenu')) },
+    { value: BACK, name: pc.dim(t('common.backToMenu')) },
   ]
   for (const type of TYPE_ORDER) {
     const group = CATALOG.filter(e => e.type === type)
@@ -52,7 +52,7 @@ function listChoices(status: StatusLookup, present: PresenceLookup): (Separator 
     rows.push(new Separator(pc.dim(`──── ${typeTitle(type)} ────`)))
     for (const entry of group) {
       const badges = hostStates(entry, HOSTS, status, present).map(s => badge(entry, s)).join(' ')
-      rows.push({ value: entry.id, name: `${entry.name} ${badges} ${pc.dim(`— ${entry.summary}`)}` })
+      rows.push({ value: entry.id, name: `${entry.name} ${badges} ${pc.dim(`— ${localize(entry.summary)}`)}` })
     }
   }
   return rows
@@ -89,7 +89,7 @@ async function manageEntry(entry: CatalogEntry, home: string, io: Io, status: St
 function printDetail(entry: CatalogEntry, states: HostState[]): void {
   console.log()
   console.log(`${pc.bold(entry.name)} ${pc.dim(`(${entry.type})`)}`)
-  console.log(entry.summary)
+  console.log(localize(entry.summary))
   console.log(`${t('manage.homepage')}: ${pc.cyan(entry.homepage)}`)
   console.log(`${t('manage.installVia')}: ${pc.dim(installLabel(entry))}`)
   console.log(`${t('manage.status')}: ${states.map(s => `${badge(entry, s)} ${statusLabel(s.status)}`).join(' · ')}`)

@@ -1,19 +1,17 @@
 import type { CatalogEntry, EntryType, HostId } from './catalog/types.js'
 import type { HostAdapter } from './hosts/types.js'
 import { homedir } from 'node:os'
-import { checkbox, select, Separator } from '@inquirer/prompts'
 import pc from 'picocolors'
 import { CATALOG } from './catalog/entries.js'
 import { HOSTS, hostById } from './hosts/index.js'
 import { installEntry } from './install.js'
 import { realIo } from './io.js'
-import { t } from './i18n.js'
+import type { MultiResult } from './list-prompt.js'
+import { localize, t } from './i18n.js'
+import { multiSelect, singleSelect } from './list-prompt.js'
 import { hostPresent, statusOf } from './probe.js'
 import { promptEnv, typeTitle } from './ui.js'
 import { buildChoices, installHosts, prunePicks, screenTypes } from './wizard-logic.js'
-
-/** 返回伪选项的哨兵值；目录条目 id 不使用双下划线前缀，不会冲突 */
-const BACK = '__back__'
 
 /** 条目的安装去向展示口径（spec 全局安装，与宿主无关） */
 function targetLabel(entry: CatalogEntry, hosts: HostAdapter[]): string {
@@ -23,7 +21,7 @@ function targetLabel(entry: CatalogEntry, hosts: HostAdapter[]): string {
 /**
  * 交互向导（PRD 验收 1-4）：
  * 宿主选择 ↔ 类型分屏多选 ↔ 汇总确认 → env 引导 → 逐条安装 → 汇总。
- * 确认前全链可退（每屏首行"返回"伪选项），确认后不可逆。
+ * 确认前全链可退（每屏顶部返回行 / Esc 后退一层，ADR-0007），确认后不可逆。
  */
 export async function runWizard(): Promise<void> {
   const home = homedir()
@@ -40,20 +38,26 @@ export async function runWizard(): Promise<void> {
 
   chain: while (true) {
     if (step < 0) {
-      // 宿主屏（链头，无返回）：首访默认勾选探测到的宿主
+      // 宿主屏（链头，返回即回主菜单）：首访默认勾选探测到的宿主
       const detected = new Set(HOSTS.filter(h => hostPresent(h, home, io)).map(h => h.id))
       const preset = new Set<HostId>(hostIds ?? [...detected])
-      const res: HostId[] = await checkbox<HostId>({
+      // 显式注解断开「preset → hostIds → res → preset」的循环推断
+      const res: MultiResult<HostId> = await multiSelect<HostId>({
         message: t('wizard.pickHosts'),
-        choices: HOSTS.map(h => ({
+        backLabel: t('common.backToMenu'),
+        help: t('prompt.multiHelp'),
+        items: HOSTS.map(h => ({
           value: h.id,
           name: detected.has(h.id) ? h.label : `${h.label} ${pc.dim(`(${t('common.notDetected')})`)}`,
+          short: h.label,
           checked: preset.has(h.id),
         })),
         validate: v => v.length > 0 || t('wizard.needHost'),
       })
-      hostIds = res
-      selected = res.map(hostById)
+      if (res.back)
+        return
+      hostIds = res.picked
+      selected = res.picked.map(hostById)
       // 改宿主后：仍适用的勾选保留，不再适用的静默丢弃
       for (const [type, ids] of picks)
         picks.set(type, prunePicks(ids, CATALOG, selected))
@@ -63,22 +67,22 @@ export async function runWizard(): Promise<void> {
       // 类型屏：首访推荐集预选，回访恢复存留勾选；不适用条目置灰示因
       const type = screens[step]!
       const rows = buildChoices(CATALOG.filter(e => e.type === type), selected, status, picks.get(type))
-      const res = await checkbox<string>({
+      const res = await multiSelect<string>({
         message: t('wizard.pickType', { type: typeTitle(type) }),
-        choices: [
-          { value: BACK, name: pc.dim(t('wizard.back')) },
-          new Separator(),
-          ...rows.map(r => ({
-            value: r.entry.id,
-            name: `${r.entry.name} ${pc.dim(`— ${r.entry.summary}`)}${r.note ? ` ${pc.yellow(`[${r.note}]`)}` : ''}`,
-            checked: r.checked,
-            disabled: r.disabled && pc.dim(`(${r.disabled})`),
-          })),
-        ],
-        pageSize: 18,
+        backLabel: t('wizard.back'),
+        help: t('prompt.multiHelp'),
+        items: rows.map(r => ({
+          value: r.entry.id,
+          name: `${r.entry.name} ${pc.dim(`— ${localize(r.entry.summary)}`)}${r.note ? ` ${pc.yellow(`[${r.note}]`)}` : ''}`,
+          short: r.entry.name,
+          checked: r.checked,
+          disabled: r.disabled || undefined,
+        })),
+        pageSize: 15,
       })
-      picks.set(type, res.filter(id => id !== BACK))
-      step += res.includes(BACK) ? -1 : 1
+      // 后退也存留当前勾选（离屏即存，回访恢复）
+      picks.set(type, res.picked)
+      step += res.back ? -1 : 1
     }
     else {
       // 汇总确认：全量已选 × 目标宿主一览，确认后进入不可逆阶段
@@ -98,20 +102,21 @@ export async function runWizard(): Promise<void> {
           console.log(`  ${p.entry.name} ${where}`)
         }
       }
-      const action = await select<'go' | 'back' | 'cancel'>({
+      const action = await singleSelect<'go' | 'cancel'>({
         message: t('wizard.confirmProceed'),
-        choices: [
+        backLabel: t('wizard.back'),
+        help: t('prompt.singleHelp'),
+        items: [
           ...(plans.length > 0 ? [{ value: 'go' as const, name: t('wizard.confirmGo') }] : []),
-          { value: 'back' as const, name: t('wizard.back') },
           { value: 'cancel' as const, name: t('wizard.confirmCancel') },
         ],
       })
-      if (action === 'cancel')
-        return
-      if (action === 'back') {
+      if (action.back) {
         step -= 1
         continue
       }
+      if (action.picked === 'cancel')
+        return
       // 已装满的条目无安装目标，静默跳过（确认屏已标注 installed）
       todo = plans.filter(p => p.hosts.length > 0)
       break chain

@@ -3,36 +3,39 @@ import { join } from 'node:path'
 /** 显示语言（ZCF 式双语，首次运行选择后落盘，ADR-0006） */
 export type Lang = 'zh' | 'en'
 
+/** 双语文案对象（目录 summary / env hint 等数据侧文案用） */
+export type Localized = Record<Lang, string>
+
 /** 全部 UI 文案；en 为键的唯一来源，zh 由类型约束保证键集合一致 */
 const en = {
-  'cli.menu': 'Interactive main menu (install / manage / doctor)',
-  'cli.install': 'Install wizard (hosts → components → env)',
-  'cli.doctor': 'Probe hosts & components, finish missing env setup',
-  'cli.manage': 'Manage catalog: per-item detail / install / uninstall',
+  'cli.menu': 'Interactive main menu (install / manage / health check)',
+  'cli.install': 'Install wizard: pick AI tools, then components, then API keys',
+  'cli.doctor': 'Check every component, fill in missing API keys',
+  'cli.manage': 'View each component, install or uninstall it',
 
   'menu.title': 'oxy main menu',
   'menu.groupComponents': 'Components',
   'menu.groupOxy': 'oxy',
   'menu.install': 'Install components',
-  'menu.installDesc': 'wizard: hosts → picks → env',
-  'menu.doctor': 'Doctor',
-  'menu.doctorDesc': 'probe status / finish env setup',
+  'menu.installDesc': 'pick components, install into Claude Code / Codex',
+  'menu.doctor': 'Health check',
+  'menu.doctorDesc': 'see what is installed, fill in missing API keys',
   'menu.manage': 'Manage components',
-  'menu.manageDesc': 'per-item detail / install / uninstall',
+  'menu.manageDesc': 'view each component, install or uninstall it',
   'menu.update': 'Check updates',
-  'menu.updateDesc': 'compare with latest on npm',
+  'menu.updateDesc': 'see if a newer version is on npm',
   'menu.lang': 'Display language',
   'menu.langDesc': 'switch English / 简体中文',
   'menu.help': 'Help',
-  'menu.helpDesc': 'all commands',
+  'menu.helpDesc': 'what each command does',
   'menu.quit': 'Quit',
   'menu.bye': 'Bye.',
   'menu.pickLang': 'Select display language / 选择显示语言',
 
   'help.body': `oxy              open this menu
-oxy install      install wizard (hosts → components → env)
-oxy manage       per-item detail / install / uninstall
-oxy doctor       probe everything, finish env setup
+oxy install      install wizard: pick AI tools, components, API keys
+oxy manage       view each component, install or uninstall it
+oxy doctor       check every component, fill in missing API keys
 
 Docs & issues: {url}`,
 
@@ -42,7 +45,7 @@ Docs & issues: {url}`,
   'update.failed': 'Update check failed: {detail}',
 
   'status.installed': 'installed',
-  'status.missingEnv': 'installed, missing env',
+  'status.missingEnv': 'installed, missing API key',
   'status.notInstalled': 'not installed',
 
   'type.mcp': 'MCP servers',
@@ -55,9 +58,9 @@ Docs & issues: {url}`,
   'logic.installedOn': 'installed on {hosts}',
   'logic.hostsOnly': '{hosts} only',
 
-  'wizard.pickHosts': 'Install into which hosts?',
-  'wizard.needHost': 'Pick at least one host',
-  'wizard.pickType': 'Select {type} to install (space = toggle, Enter = next)',
+  'wizard.pickHosts': 'Install into which AI tools?',
+  'wizard.needHost': 'Pick at least one AI tool',
+  'wizard.pickType': 'Select {type} to install',
   'wizard.back': '← Back',
   'wizard.confirmList': 'About to install {n} component(s):',
   'wizard.confirmEmpty': 'Nothing selected.',
@@ -66,16 +69,18 @@ Docs & issues: {url}`,
   'wizard.confirmCancel': 'Cancel, back to menu',
   'wizard.summary': '{n} installed',
   'wizard.summaryFailed': ', {n} failed',
-  'wizard.doctorHint': 'Run `npx oxy-workflow doctor` anytime to check status or finish env setup.',
+  'wizard.doctorHint': 'Run `npx oxy-workflow doctor` anytime to check status or fill in missing API keys.',
+
+  'prompt.multiHelp': 'space to select · enter to continue · esc to go back',
+  'prompt.singleHelp': 'enter to confirm · esc to go back',
 
   'doctor.globalTools': 'Global tools',
   'doctor.envPrompt': '{name} on {host} · {key} (Enter to skip)',
   'doctor.reRegisterFailed': '{id} failed to re-register: {detail}',
-  'doctor.envConfigured': '{id} env configured',
+  'doctor.envConfigured': '{id} API key saved',
   'doctor.envFailed': '{id} failed: {detail}',
 
   'manage.pick': 'Select a component (Enter = detail)',
-  'manage.backToMenu': '← Back to menu',
   'manage.backToList': '← Back to list',
   'manage.homepage': 'Homepage',
   'manage.installVia': 'Install via',
@@ -87,6 +92,7 @@ Docs & issues: {url}`,
   'manage.confirmRemove': 'Remove {name} on {host}?',
   'manage.globalCli': 'global CLI, uninstall manually',
 
+  'common.backToMenu': '← Back to menu',
   'common.envOptional': '(optional, Enter to skip)',
   'common.notDetected': 'not detected',
   'common.ok': 'ok',
@@ -97,33 +103,33 @@ export type MsgKey = keyof typeof en
 
 const zh: Record<MsgKey, string> = {
   'cli.menu': '交互主菜单（安装 / 管理 / 体检）',
-  'cli.install': '安装向导（宿主 → 组件 → env）',
-  'cli.doctor': '探测宿主与组件状态，补配缺失 env',
-  'cli.manage': '管理目录：单件详情 / 安装 / 卸载',
+  'cli.install': '安装向导：选 AI 工具、挑组件、填 API Key',
+  'cli.doctor': '检查所有组件，补填缺少的 API Key',
+  'cli.manage': '查看单个组件，安装或卸载',
 
   'menu.title': 'oxy 主菜单',
   'menu.groupComponents': '组件',
   'menu.groupOxy': 'oxy',
   'menu.install': '安装组件',
-  'menu.installDesc': '向导：宿主 → 多选 → env',
-  'menu.doctor': '体检 doctor',
-  'menu.doctorDesc': '探测状态 / 补配 env',
+  'menu.installDesc': '挑选组件，批量安装到 Claude Code / Codex',
+  'menu.doctor': '环境体检',
+  'menu.doctorDesc': '检查哪些组件已装好，补填缺少的 API Key',
   'menu.manage': '管理组件',
-  'menu.manageDesc': '单件详情 / 安装 / 卸载',
+  'menu.manageDesc': '查看每个组件的状态，单独安装或卸载',
   'menu.update': '检查更新',
-  'menu.updateDesc': '对比 npm 最新版本',
+  'menu.updateDesc': '看看 npm 上有没有新版本',
   'menu.lang': '更改显示语言 / Language',
   'menu.langDesc': '切换 English / 简体中文',
   'menu.help': '帮助',
-  'menu.helpDesc': '全部命令说明',
+  'menu.helpDesc': '查看全部命令说明',
   'menu.quit': '退出',
   'menu.bye': '再见。',
   'menu.pickLang': 'Select display language / 选择显示语言',
 
   'help.body': `oxy              打开主菜单
-oxy install      安装向导（宿主 → 组件 → env）
-oxy manage       单件详情 / 安装 / 卸载
-oxy doctor       全量探测，补配 env
+oxy install      安装向导：选 AI 工具、挑组件、填 API Key
+oxy manage       查看单个组件，安装或卸载
+oxy doctor       检查所有组件，补填缺少的 API Key
 
 文档与反馈：{url}`,
 
@@ -133,7 +139,7 @@ oxy doctor       全量探测，补配 env
   'update.failed': '检查更新失败：{detail}',
 
   'status.installed': '已安装',
-  'status.missingEnv': '已安装，缺 env',
+  'status.missingEnv': '已安装，缺 API Key',
   'status.notInstalled': '未安装',
 
   'type.mcp': 'MCP 服务器',
@@ -142,13 +148,13 @@ oxy doctor       全量探测，补配 env
   'type.spec': 'Spec 工具（全局安装）',
 
   'logic.requires': '需要 {hosts}',
-  'logic.supportedHost': '受支持的宿主',
+  'logic.supportedHost': '受支持的 AI 工具',
   'logic.installedOn': '已装于 {hosts}',
   'logic.hostsOnly': '仅 {hosts}',
 
-  'wizard.pickHosts': '安装到哪些宿主？',
-  'wizard.needHost': '至少选择一个宿主',
-  'wizard.pickType': '选择要安装的 {type}（空格多选，回车下一步）',
+  'wizard.pickHosts': '安装到哪些 AI 工具？',
+  'wizard.needHost': '至少选择一个 AI 工具',
+  'wizard.pickType': '选择要安装的 {type}',
   'wizard.back': '← 返回上一步',
   'wizard.confirmList': '即将安装 {n} 个组件：',
   'wizard.confirmEmpty': '未选择任何组件。',
@@ -157,16 +163,18 @@ oxy doctor       全量探测，补配 env
   'wizard.confirmCancel': '取消，回主菜单',
   'wizard.summary': '{n} 个安装成功',
   'wizard.summaryFailed': '，{n} 个失败',
-  'wizard.doctorHint': '随时运行 `npx oxy-workflow doctor` 查看状态或补配 env。',
+  'wizard.doctorHint': '随时运行 `npx oxy-workflow doctor` 检查状态、补填 API Key。',
+
+  'prompt.multiHelp': '空格勾选 · 回车下一步 · Esc 返回',
+  'prompt.singleHelp': '回车确认 · Esc 返回',
 
   'doctor.globalTools': '全局工具',
   'doctor.envPrompt': '{name} @ {host} · {key}（回车跳过）',
   'doctor.reRegisterFailed': '{id} 重新注册失败：{detail}',
-  'doctor.envConfigured': '{id} env 已配置',
+  'doctor.envConfigured': '{id} API Key 已配置',
   'doctor.envFailed': '{id} 失败：{detail}',
 
   'manage.pick': '选择要管理的组件（回车进入详情）',
-  'manage.backToMenu': '← 返回主菜单',
   'manage.backToList': '← 返回列表',
   'manage.homepage': '主页',
   'manage.installVia': '安装方式',
@@ -178,6 +186,7 @@ oxy doctor       全量探测，补配 env
   'manage.confirmRemove': '确认卸载 {name}（{host}）？',
   'manage.globalCli': '全局 CLI，请手动卸载',
 
+  'common.backToMenu': '← 返回主菜单',
   'common.envOptional': '（可选，回车跳过）',
   'common.notDetected': '未检测到',
   'common.ok': '成功',
@@ -204,6 +213,11 @@ export function t(key: MsgKey, params?: Record<string, string | number>): string
     const value = params?.[name]
     return value === undefined ? match : String(value)
   })
+}
+
+/** 按当前显示语言取双语文案 */
+export function localize(text: Localized): string {
+  return text[current]
 }
 
 /** 按系统 locale 推断默认语言：zh* → zh，其余 en */

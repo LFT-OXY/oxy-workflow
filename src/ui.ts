@@ -2,7 +2,7 @@ import type { CatalogEntry } from './catalog/types.js'
 import type { Status } from './probe.js'
 import { password } from '@inquirer/prompts'
 import pc from 'picocolors'
-import { t } from './i18n.js'
+import { localize, t } from './i18n.js'
 
 /** 状态的统一展示口径（各流程共用） */
 export function statusLabel(status: Status): string {
@@ -28,7 +28,7 @@ export async function promptEnv(entry: CatalogEntry): Promise<Record<string, str
   const values: Record<string, string> = {}
   for (const v of entry.env ?? []) {
     const suffix = v.required ? '' : ` ${t('common.envOptional')}`
-    const hint = v.hint ? pc.dim(` ${v.hint}`) : ''
+    const hint = v.hint ? pc.dim(` ${localize(v.hint)}`) : ''
     const value = await password({ message: `${entry.name} · ${v.key}${suffix}${hint}`, mask: '*' })
     if (value)
       values[v.key] = value
